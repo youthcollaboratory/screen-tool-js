@@ -135,6 +135,7 @@ export default function Home() {
                 <th className="border px-2 py-1">Primary Term</th>
                 <th className="border px-2 py-1">Category</th>
                 <th className="border px-2 py-1">EO</th>
+                <th className="border px-2 py-1">Reason</th>
               </tr>
             </thead>
             <tbody>
@@ -145,6 +146,7 @@ export default function Home() {
                   <td className="border px-2 py-1">{f.primary}</td>
                   <td className="border px-2 py-1">{f.category}</td>
                   <td className="border px-2 py-1">{f.eo}</td>
+                  <td className="border px-2 py-1">{f.reason}</td>
                 </tr>
               ))}
             </tbody>
