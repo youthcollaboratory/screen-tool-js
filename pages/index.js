@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Papa from 'papaparse';
 
 export default function Home() {
   const [url, setUrl] = useState('');
@@ -29,19 +30,16 @@ export default function Home() {
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const text = e.target.result;
-      const rows = text.trim().split('\n').map(line => line.split(','));
-      const headers = rows[0];
-      const formatted = rows.slice(1).map(row => {
-        const obj = {};
-        row.forEach((val, i) => obj[headers[i]?.trim()] = val.trim());
-        return obj;
-      });
-      setCsvData(formatted);
-    };
-    reader.readAsText(file);
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        setCsvData(results.data);
+      },
+      error: (err) => {
+        setError('CSV parsing error: ' + err.message);
+      }
+    });
   };
 
   const runScreening = (inputText, termList) => {
