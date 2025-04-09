@@ -128,32 +128,48 @@ export default function Home() {
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Communication Content Screening</h1>
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <h1 className="text-3xl font-bold mb-2">Communication Content Screening</h1>
 
-      <input
-        type="file"
-        accept=".csv"
-        onChange={handleFileUpload}
-        className="mb-4 block"
-      />
+      {/* Upload CSV */}
+      <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
+        <h2 className="text-xl font-semibold mb-2">1. Upload Screening Terms</h2>
+        <input
+          type="file"
+          accept=".csv"
+          onChange={handleFileUpload}
+          className="block text-sm"
+        />
+      </div>
 
-      <textarea
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Paste your text here to scan..."
-        className="border p-2 w-full mb-4 h-40"
-      />
-
-      <div className="flex gap-2 mb-4">
+      {/* URL Input */}
+      <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
+        <h2 className="text-xl font-semibold mb-2">2. Scan From Webpage</h2>
+        <input
+          type="text"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          placeholder="Enter a URL to scrape and scan..."
+          className="border border-gray-300 p-2 rounded w-full mb-3"
+        />
         <button
           onClick={handleScrape}
           disabled={loading}
           className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          {loading ? 'Scraping...' : 'Scrape from URL'}
+          {loading ? 'Scraping...' : 'Scrape and Scan'}
         </button>
+      </div>
 
+      {/* Text Area Input */}
+      <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
+        <h2 className="text-xl font-semibold mb-2">3. Scan Pasted Text</h2>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Paste your text here..."
+          className="border border-gray-300 p-2 rounded w-full h-40 mb-3"
+        />
         <button
           onClick={() => runScreening(text, csvData)}
           disabled={loading || !text}
@@ -163,20 +179,14 @@ export default function Home() {
         </button>
       </div>
 
-      <input
-        type="text"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="Or enter a URL to scrape..."
-        className="border p-2 w-full mb-4"
-      />
-
+      {/* Error */}
       {error && <p className="text-red-600">Error: {error}</p>}
 
+      {/* Flag Table */}
       {flags.length > 0 && (
         <div className="my-6">
           <h2 className="font-semibold mb-2">Flagged Terms</h2>
-          <table className="table-auto border-collapse w-full text-sm">
+          <table className="table-auto border-collapse w-full text-sm bg-white shadow-sm rounded">
             <thead>
               <tr>
                 <th className="border px-2 py-1">#</th>
@@ -205,11 +215,12 @@ export default function Home() {
         </div>
       )}
 
+      {/* Highlighted Text Output */}
       {text && (
-        <div className="mt-6">
+        <div className="mt-6 bg-gray-50 p-4 border rounded">
           <h2 className="font-semibold mb-2">Highlighted Content</h2>
           <div
-            className="bg-gray-100 p-4 text-sm border rounded"
+            className="text-sm"
             style={{ lineHeight: '1.7' }}
             dangerouslySetInnerHTML={{ __html: getHighlightedText() }}
           />
