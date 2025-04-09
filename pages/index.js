@@ -85,19 +85,46 @@ export default function Home() {
 
   const getHighlightedText = () => {
     if (!flags.length) return text;
+
     let result = '';
     let lastIndex = 0;
+    let segments = [];
 
     flags.forEach((flag, i) => {
-      result += text.slice(lastIndex, flag.position);
-      const color = flag.matchType === 'Primary' || flag.matchType === 'Secondary' ? '#FFA500' : '#FFFF00';
-      const highlighted = `<mark style="background-color:${color}">${text.substr(flag.position, flag.term.length)}</mark><sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup>`;
-      result += highlighted;
+      segments.push({
+        start: lastIndex,
+        end: flag.position,
+        text: text.slice(lastIndex, flag.position),
+        highlighted: false
+      });
+
+      segments.push({
+        start: flag.position,
+        end: flag.position + flag.term.length,
+        text: `<mark style="background-color:${
+          flag.matchType === 'Primary' || flag.matchType === 'Secondary'
+            ? '#FFA500'
+            : '#FFFF00'
+        }">${text.substr(flag.position, flag.term.length)}</mark><sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup>`,
+        highlighted: true
+      });
+
       lastIndex = flag.position + flag.term.length;
     });
 
-    result += text.slice(lastIndex);
-    return result;
+    segments.push({
+      start: lastIndex,
+      end: text.length,
+      text: text.slice(lastIndex),
+      highlighted: false
+    });
+
+    const fullText = segments.map(seg => seg.text).join('');
+    const paragraphs = fullText.split(/\n\s*\n/);
+
+    return paragraphs
+      .map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`)
+      .join('');
   };
 
   return (
@@ -135,6 +162,7 @@ export default function Home() {
                 <th className="border px-2 py-1">Match Type</th>
                 <th className="border px-2 py-1">Primary Term</th>
                 <th className="border px-2 py-1">Category</th>
+                <th className="border px-2 py-1">EO</th>
                 <th className="border px-2 py-1">Reason</th>
               </tr>
             </thead>
@@ -146,6 +174,7 @@ export default function Home() {
                   <td className="border px-2 py-1">{f.matchType}</td>
                   <td className="border px-2 py-1">{f.primary}</td>
                   <td className="border px-2 py-1">{f.category}</td>
+                  <td className="border px-2 py-1">{f.eo}</td>
                   <td className="border px-2 py-1">{f.reason}</td>
                 </tr>
               ))}
@@ -157,7 +186,7 @@ export default function Home() {
         <div className="mt-6">
           <h2 className="font-semibold mb-2">Highlighted Content</h2>
           <div
-            className="bg-gray-100 p-4 whitespace-pre-wrap text-sm border rounded"
+            className="bg-gray-100 p-4 text-sm border rounded"
             dangerouslySetInnerHTML={{ __html: getHighlightedText() }}
           />
         </div>
