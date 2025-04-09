@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import Papa from 'papaparse';
 
@@ -85,23 +84,21 @@ export default function Home() {
   };
 
   const getHighlightedText = () => {
-  if (!flags.length) return text;
-  let result = '';
-  let lastIndex = 0;
-  flags.forEach(flag => {
-    result += text.slice(lastIndex, flag.position);
-    const color = flag.matchType === 'Primary' || flag.matchType === 'Secondary' ? '#FFA500' : '#FFFF00';
+    if (!flags.length) return text;
+    let result = '';
+    let lastIndex = 0;
 
-    const tooltip = `Reason: ${flag.reason}\\nEO: ${flag.eo}\\nPrimary: ${flag.primary}\\nCategory: ${flag.category}`
-      .replace(/"/g, '&quot;')
-      .replace(/\n/g, '&#10;');
+    flags.forEach((flag, i) => {
+      result += text.slice(lastIndex, flag.position);
+      const color = flag.matchType === 'Primary' || flag.matchType === 'Secondary' ? '#FFA500' : '#FFFF00';
+      const highlighted = `<mark style="background-color:${color}">${text.substr(flag.position, flag.term.length)}</mark><sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup>`;
+      result += highlighted;
+      lastIndex = flag.position + flag.term.length;
+    });
 
-    result += `<mark title="${tooltip}" style="background-color:${color}">${text.substr(flag.position, flag.term.length)}</mark>`;
-    lastIndex = flag.position + flag.term.length;
-  });
-  result += text.slice(lastIndex);
-  return result;
-};
+    result += text.slice(lastIndex);
+    return result;
+  };
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
@@ -133,18 +130,22 @@ export default function Home() {
           <table className="table-auto border-collapse w-full text-sm">
             <thead>
               <tr>
+                <th className="border px-2 py-1">#</th>
                 <th className="border px-2 py-1">Term</th>
                 <th className="border px-2 py-1">Match Type</th>
                 <th className="border px-2 py-1">Primary Term</th>
+                <th className="border px-2 py-1">Category</th>
                 <th className="border px-2 py-1">Reason</th>
               </tr>
             </thead>
             <tbody>
               {flags.map((f, i) => (
                 <tr key={i}>
+                  <td className="border px-2 py-1">{i + 1}</td>
                   <td className="border px-2 py-1">{f.term}</td>
                   <td className="border px-2 py-1">{f.matchType}</td>
                   <td className="border px-2 py-1">{f.primary}</td>
+                  <td className="border px-2 py-1">{f.category}</td>
                   <td className="border px-2 py-1">{f.reason}</td>
                 </tr>
               ))}
