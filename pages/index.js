@@ -130,27 +130,49 @@ export default function Home() {
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Communication Content Screening</h1>
+
       <input
         type="file"
         accept=".csv"
         onChange={handleFileUpload}
         className="mb-4 block"
       />
+
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Paste your text here to scan..."
+        className="border p-2 w-full mb-4 h-40"
+      />
+
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={handleScrape}
+          disabled={loading}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          {loading ? 'Scraping...' : 'Scrape from URL'}
+        </button>
+
+        <button
+          onClick={() => runScreening(text, csvData)}
+          disabled={loading || !text}
+          className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+        >
+          Scan Pasted Text
+        </button>
+      </div>
+
       <input
         type="text"
         value={url}
         onChange={(e) => setUrl(e.target.value)}
-        placeholder="Enter URL to scrape..."
+        placeholder="Or enter a URL to scrape..."
         className="border p-2 w-full mb-4"
       />
-      <button
-        onClick={handleScrape}
-        disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4"
-      >
-        {loading ? 'Scraping...' : 'Scrape and Screen'}
-      </button>
+
       {error && <p className="text-red-600">Error: {error}</p>}
+
       {flags.length > 0 && (
         <div className="my-6">
           <h2 className="font-semibold mb-2">Flagged Terms</h2>
@@ -161,6 +183,8 @@ export default function Home() {
                 <th className="border px-2 py-1">Term</th>
                 <th className="border px-2 py-1">Match Type</th>
                 <th className="border px-2 py-1">Primary Term</th>
+                <th className="border px-2 py-1">Category</th>
+                <th className="border px-2 py-1">EO</th>
                 <th className="border px-2 py-1">Reason</th>
               </tr>
             </thead>
@@ -171,6 +195,8 @@ export default function Home() {
                   <td className="border px-2 py-1">{f.term}</td>
                   <td className="border px-2 py-1">{f.matchType}</td>
                   <td className="border px-2 py-1">{f.primary}</td>
+                  <td className="border px-2 py-1">{f.category}</td>
+                  <td className="border px-2 py-1">{f.eo}</td>
                   <td className="border px-2 py-1">{f.reason}</td>
                 </tr>
               ))}
@@ -178,11 +204,13 @@ export default function Home() {
           </table>
         </div>
       )}
+
       {text && (
         <div className="mt-6">
           <h2 className="font-semibold mb-2">Highlighted Content</h2>
           <div
             className="bg-gray-100 p-4 text-sm border rounded"
+            style={{ lineHeight: '1.7' }}
             dangerouslySetInnerHTML={{ __html: getHighlightedText() }}
           />
         </div>
