@@ -85,19 +85,23 @@ export default function Home() {
   };
 
   const getHighlightedText = () => {
-    if (!flags.length) return text;
-    let result = '';
-    let lastIndex = 0;
-    flags.forEach(flag => {
-      result += text.slice(lastIndex, flag.position);
-      const color = flag.matchType === 'Primary' || flag.matchType === 'Secondary' ? '#FFA500' : '#FFFF00';
-      const tooltip = `Reason: ${flag.reason}<br />EO: ${flag.eo}<br />Primary: ${flag.primary}<br />Category: ${flag.category}`;
-      result += `<mark title="${tooltip}" style="background-color:${color}">${text.substr(flag.position, flag.term.length)}</mark>`;
-      lastIndex = flag.position + flag.term.length;
-    });
-    result += text.slice(lastIndex);
-    return result;
-  };
+  if (!flags.length) return text;
+  let result = '';
+  let lastIndex = 0;
+  flags.forEach(flag => {
+    result += text.slice(lastIndex, flag.position);
+    const color = flag.matchType === 'Primary' || flag.matchType === 'Secondary' ? '#FFA500' : '#FFFF00';
+
+    const tooltip = `Reason: ${flag.reason}\\nEO: ${flag.eo}\\nPrimary: ${flag.primary}\\nCategory: ${flag.category}`
+      .replace(/"/g, '&quot;')
+      .replace(/\n/g, '&#10;');
+
+    result += `<mark title="${tooltip}" style="background-color:${color}">${text.substr(flag.position, flag.term.length)}</mark>`;
+    lastIndex = flag.position + flag.term.length;
+  });
+  result += text.slice(lastIndex);
+  return result;
+};
 
   return (
     <div className="p-6 max-w-3xl mx-auto">
