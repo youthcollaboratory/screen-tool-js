@@ -9,6 +9,26 @@ export default function Home() {
   const [flags, setFlags] = useState([]);
   const [csvData, setCsvData] = useState([]);
 
+  // Flash on anchor jumps
+  useEffect(() => {
+    const handleHashJump = () => {
+      const id = window.location.hash?.substring(1);
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) {
+        const mark = el.querySelector('mark');
+        if (mark) {
+          mark.classList.remove('animate-flash-once');
+          void mark.offsetWidth; // Force reflow
+          mark.classList.add('animate-flash-once');
+        }
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashJump);
+    return () => window.removeEventListener('hashchange', handleHashJump);
+  }, []);
+
 const handleScrape = async () => {
   setText(''); // Clear pasted text
   setLoading(true);
