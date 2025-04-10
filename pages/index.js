@@ -18,9 +18,9 @@ export default function Home() {
       if (el) {
         const mark = el.querySelector('mark');
         if (mark) {
-          mark.classList.remove('animate-flash-once');
+          mark.classList.remove('animate-blink-sharp');
           void mark.offsetWidth; // Force reflow
-          mark.classList.add('animate-flash-once');
+          mark.classList.add('animate-blink-sharp');
         }
       }
     };
@@ -124,7 +124,7 @@ const getHighlightedText = () => {
     segments.push({
       start: flag.position,
       end: flag.position + flag.term.length,
-      text: `<a id="ref-${i + 1}"><mark class="animate-flash-once" style="background-color:${
+      text: `<a id="ref-${i + 1}"><mark class="animate-blink-sharp" style="background-color:${
         flag.matchType === 'Primary' || flag.matchType === 'Secondary'
           ? '#FFA500'
           : '#FFFF00'
