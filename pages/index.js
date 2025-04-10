@@ -107,11 +107,11 @@ const handleScrape = async () => {
 const getHighlightedText = () => {
   if (!flags.length) return text;
 
-  let result = '';
   let lastIndex = 0;
   let segments = [];
 
   flags.forEach((flag, i) => {
+    // Add plain text between matches
     segments.push({
       start: lastIndex,
       end: flag.position,
@@ -119,22 +119,35 @@ const getHighlightedText = () => {
       highlighted: false,
     });
 
-    const highlightedText = text.substr(flag.position, flag.term.length);
+    const highlightColor =
+      flag.matchType === 'Primary' || flag.matchType === 'Secondary'
+        ? '#FFA500'
+        : '#FFFF00';
 
+    const matchedText = text.substr(flag.position, flag.term.length);
+
+    // Add highlighted match with unique anchor and dynamic pulse
     segments.push({
       start: flag.position,
       end: flag.position + flag.term.length,
-      text: `<a id="ref-${i + 1}"><mark class="animate-pulse-soft" style="background-color:${
-        flag.matchType === 'Primary' || flag.matchType === 'Secondary'
-          ? '#FFA500'
-          : '#FFFF00'
-      }">${highlightedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup></a>`,
+      text: `
+        <a id="ref-${i + 1}">
+          <mark style="
+            background-color: ${highlightColor};
+            animation: pulseMatch 1.2s ease-in-out 2;
+          ">${matchedText}</mark>
+        </a>
+        <a href="#flag-${i + 1}">
+          <sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup>
+        </a>
+      `,
       highlighted: true,
     });
 
     lastIndex = flag.position + flag.term.length;
   });
 
+  // Add any text after the last match
   segments.push({
     start: lastIndex,
     end: text.length,
@@ -142,13 +155,18 @@ const getHighlightedText = () => {
     highlighted: false,
   });
 
+  // Assemble full text and wrap paragraphs
   const fullText = segments.map(seg => seg.text).join('');
   const paragraphs = fullText.split(/\n\s*\n/);
 
   return paragraphs
-    .map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`)
+    .map(
+      para =>
+        `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`
+    )
     .join('');
 };
+
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -215,6 +233,19 @@ const getHighlightedText = () => {
           <div className="text-sm" style={{ lineHeight: '1.7' }} dangerouslySetInnerHTML={{ __html: getHighlightedText() }} />
         </div>
       )}
+      {/* Custom animation style for dynamic highlight pulses */}
+      <div
+        dangerouslySetInnerHTML={{
+          __html: `
+            <style>
+              @keyframes pulseMatch {
+                0%, 100% { filter: brightness(1); }
+                50% { filter: brightness(1.8); }
+              }
+            </style>
+          `
+        }}
+      />
     </div>
   );
 }
