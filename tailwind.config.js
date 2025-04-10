@@ -11,6 +11,15 @@ module.exports = {
         'yc-green': '#00b398',
         'yc-green-dark': '#009e85',
       },
+      keyframes: {
+        flash: {
+          '0%': { backgroundColor: '#ffff99' },
+          '100%': { backgroundColor: 'transparent' },
+        },
+      },
+      animation: {
+        'flash-once': 'flash 1s ease-out',
+      },
     },
   },
   plugins: [],
