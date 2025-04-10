@@ -56,7 +56,7 @@ const handleScrape = async () => {
 
       Object.entries(termMap).forEach(([matchType, terms]) => {
         terms.forEach(term => {
-          const regex = new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+          const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
           let match;
           while ((match = regex.exec(inputText)) !== null) {
             results.push({
