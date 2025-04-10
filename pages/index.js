@@ -9,24 +9,25 @@ export default function Home() {
   const [flags, setFlags] = useState([]);
   const [csvData, setCsvData] = useState([]);
 
-  const handleScrape = async () => {
-    setLoading(true);
-    setError('');
-    setFlags([]);
-    try {
-      const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
-      const data = await res.json();
-      if (res.ok) {
-        setText(data.text);
-        runScreening(data.text, csvData);
-      } else {
-        setError(data.error || 'Unknown error');
-      }
-    } catch (e) {
-      setError(e.message);
+const handleScrape = async () => {
+  setText(''); // Clear pasted text
+  setLoading(true);
+  setError('');
+  setFlags([]);
+  try {
+    const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
+    const data = await res.json();
+    if (res.ok) {
+      setText(data.text);
+      runScreening(data.text, csvData);
+    } else {
+      setError(data.error || 'Unknown error');
     }
-    setLoading(false);
-  };
+  } catch (e) {
+    setError(e.message);
+  }
+  setLoading(false);
+};
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -143,7 +144,7 @@ export default function Home() {
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">3. Scan Pasted Text</h2>
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste your text here..." className="border border-gray-300 p-2 rounded w-full h-40 mb-3" />
-        <button onClick={() => runScreening(text, csvData)} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
+        <button onClick={() => {setUrl(''); runScreening(text, csvData);}} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
           Scan Pasted Text
         </button>
       </div>
