@@ -9,25 +9,25 @@ export default function Home() {
   const [flags, setFlags] = useState([]);
   const [csvData, setCsvData] = useState([]);
 
-  // Flash on anchor jumps
-  useEffect(() => {
-    const handleHashJump = () => {
-      const id = window.location.hash?.substring(1);
-      if (!id) return;
-      const el = document.getElementById(id);
-      if (el) {
-        const mark = el.querySelector('mark');
-        if (mark) {
-          mark.classList.remove('animate-blink-sharp');
-          void mark.offsetWidth; // Force reflow
-          mark.classList.add('animate-blink-sharp');
-        }
+// Flash on anchor jumps
+useEffect(() => {
+  const handleHashJump = () => {
+    const id = window.location.hash?.substring(1);
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (el) {
+      const mark = el.querySelector('mark');
+      if (mark) {
+        mark.classList.remove('animate-pulse-soft'); // update class name here
+        void mark.offsetWidth; // Force reflow
+        mark.classList.add('animate-pulse-soft');
       }
-    };
+    }
+  };
 
-    window.addEventListener('hashchange', handleHashJump);
-    return () => window.removeEventListener('hashchange', handleHashJump);
-  }, []);
+  window.addEventListener('hashchange', handleHashJump);
+  return () => window.removeEventListener('hashchange', handleHashJump);
+}, []);
 
 const handleScrape = async () => {
   setText(''); // Clear pasted text
@@ -124,7 +124,7 @@ const getHighlightedText = () => {
     segments.push({
       start: flag.position,
       end: flag.position + flag.term.length,
-      text: `<a id="ref-${i + 1}"><mark class="animate-blink-sharp" style="background-color:${
+      text: `<a id="ref-${i + 1}"><mark class="animate-pulse-soft" style="background-color:${
         flag.matchType === 'Primary' || flag.matchType === 'Secondary'
           ? '#FFA500'
           : '#FFFF00'
