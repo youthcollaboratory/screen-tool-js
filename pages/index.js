@@ -101,11 +101,13 @@ const handleScrape = async () => {
       segments.push({
         start: flag.position,
         end: flag.position + flag.term.length,
-        text: `<mark style="background-color:${
+        text: `<a id="ref-${i + 1}"><mark class="animate-flash-once" style="background-color:${
           flag.matchType === 'Primary' || flag.matchType === 'Secondary'
-            ? '#FFA500'
-            : '#FFFF00'
-        }">${text.substr(flag.position, flag.term.length)}</mark><sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup>`,
+    ? '#FFA500' : '#FFFF00'
+}">${text.substr(flag.position, flag.term.length)}</mark></a>
+<a href="#flag-${i + 1}">
+  <sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup>
+</a>`,
         highlighted: true
       });
 
@@ -166,8 +168,12 @@ const handleScrape = async () => {
             </thead>
             <tbody>
               {flags.map((f, i) => (
-                <tr key={i}>
-                  <td className="border px-2 py-1">{i + 1}</td>
+                <tr key={i} id={`flag-${i + 1}`} className="scroll-mt-24">
+                  <td className="border px-2 py-1">
+                        <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">
+                        {i + 1}
+                        </a>
+                  </td>
                   <td className="border px-2 py-1">{f.term}</td>
                   <td className="border px-2 py-1">{f.matchType}</td>
                   <td className="border px-2 py-1">{f.primary}</td>
