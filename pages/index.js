@@ -104,18 +104,11 @@ const getHighlightedText = () => {
     segments.push({
       start: flag.position,
       end: flag.position + flag.term.length,
-      text: `
-        <a id="ref-${i + 1}">
-          <mark class="animate-flash-once" style="background-color:${
-            flag.matchType === 'Primary' || flag.matchType === 'Secondary'
-              ? '#FFA500'
-              : '#FFFF00'
-          }">${highlightedText}</mark>
-        </a>
-        <a href="#flag-${i + 1}">
-          <sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup>
-        </a>
-      `,
+      text: `<a id="ref-${i + 1}"><mark class="animate-flash-once" style="background-color:${
+        flag.matchType === 'Primary' || flag.matchType === 'Secondary'
+          ? '#FFA500'
+          : '#FFFF00'
+      }">${highlightedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup></a>`,
       highlighted: true,
     });
 
@@ -130,28 +123,12 @@ const getHighlightedText = () => {
   });
 
   const fullText = segments.map(seg => seg.text).join('');
-
-  const paragraphs = fullText.split(/\n\s*\n/); // split on blank lines for paragraph breaks
+  const paragraphs = fullText.split(/\n\s*\n/);
 
   return paragraphs
     .map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`)
     .join('');
 };
-
-      lastIndex = flag.position + flag.term.length;
-    });
-
-    segments.push({
-      start: lastIndex,
-      end: text.length,
-      text: text.slice(lastIndex),
-      highlighted: false
-    });
-
-    const fullText = segments.map(seg => seg.text).join('');
-    const paragraphs = fullText.split(/\n\s*\n/);
-    return paragraphs.map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`).join('');
-  };
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
