@@ -16,9 +16,14 @@ module.exports = {
           '0%': { backgroundColor: '#ffff99' },
           '100%': { backgroundColor: 'transparent' },
         },
+        blink: {
+          '0%, 100%': { backgroundColor: 'transparent' },
+          '25%, 75%': { backgroundColor: '#ffff99' },
+        },
       },
       animation: {
         'flash-once': 'flash 1s ease-out',
+        'blink-sharp': 'blink 0.2s steps(1, start) 3',
       },
     },
   },
