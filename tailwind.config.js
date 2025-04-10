@@ -12,16 +12,15 @@ module.exports = {
         'yc-green-dark': '#009e85',
       },
       keyframes: {
-        pulseHighlight: {
-        '0%, 100%': { backgroundColor: 'transparent' },
-        '50%': { backgroundColor: '#ffff99' },
+        pulseMatch: {
+          '0%, 100%': { filter: 'brightness(1)' },
+          '50%': { filter: 'brightness(1.8)' },
         },
       },
       animation: {
-        'flash-once': 'flash 1s ease-out',
-        'pulse-soft': 'pulseHighlight 1.2s ease-in-out 2',
+        'pulse-match': 'pulseMatch 1.2s ease-in-out 2',
       },
     },
   },
   plugins: [],
-}
+};
