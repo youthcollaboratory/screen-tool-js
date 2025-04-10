@@ -84,32 +84,59 @@ const handleScrape = async () => {
     setFlags(deduped);
   };
 
-  const getHighlightedText = () => {
-    if (!flags.length) return text;
-    let result = '';
-    let lastIndex = 0;
-    let segments = [];
+const getHighlightedText = () => {
+  if (!flags.length) return text;
 
-    flags.forEach((flag, i) => {
-      segments.push({
-        start: lastIndex,
-        end: flag.position,
-        text: text.slice(lastIndex, flag.position),
-        highlighted: false
-      });
+  let result = '';
+  let lastIndex = 0;
+  let segments = [];
 
-      segments.push({
-        start: flag.position,
-        end: flag.position + flag.term.length,
-        text: `<a id="ref-${i + 1}"><mark class="animate-flash-once" style="background-color:${
-          flag.matchType === 'Primary' || flag.matchType === 'Secondary'
-    ? '#FFA500' : '#FFFF00'
-}">${text.substr(flag.position, flag.term.length)}</mark></a>
-<a href="#flag-${i + 1}">
-  <sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup>
-</a>`,
-        highlighted: true
-      });
+  flags.forEach((flag, i) => {
+    segments.push({
+      start: lastIndex,
+      end: flag.position,
+      text: text.slice(lastIndex, flag.position),
+      highlighted: false,
+    });
+
+    const highlightedText = text.substr(flag.position, flag.term.length);
+
+    segments.push({
+      start: flag.position,
+      end: flag.position + flag.term.length,
+      text: `
+        <a id="ref-${i + 1}">
+          <mark class="animate-flash-once" style="background-color:${
+            flag.matchType === 'Primary' || flag.matchType === 'Secondary'
+              ? '#FFA500'
+              : '#FFFF00'
+          }">${highlightedText}</mark>
+        </a>
+        <a href="#flag-${i + 1}">
+          <sup style="font-size:0.7em; vertical-align:super; margin-left:2px;">[${i + 1}]</sup>
+        </a>
+      `,
+      highlighted: true,
+    });
+
+    lastIndex = flag.position + flag.term.length;
+  });
+
+  segments.push({
+    start: lastIndex,
+    end: text.length,
+    text: text.slice(lastIndex),
+    highlighted: false,
+  });
+
+  const fullText = segments.map(seg => seg.text).join('');
+
+  const paragraphs = fullText.split(/\n\s*\n/); // split on blank lines for paragraph breaks
+
+  return paragraphs
+    .map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`)
+    .join('');
+};
 
       lastIndex = flag.position + flag.term.length;
     });
