@@ -9,57 +9,53 @@ export default function Home() {
   const [flags, setFlags] = useState([]);
   const [csvData, setCsvData] = useState([]);
 
-// Flash on anchor jumps
-useEffect(() => {
-  const handleHashJump = () => {
-    const id = window.location.hash?.substring(1);
-    if (!id) return;
-    const el = document.getElementById(id);
-    if (el) {
-      const mark = el.querySelector('mark');
-      if (mark) {
-        mark.classList.remove('animate-pulse-soft'); // update class name here
-        void mark.offsetWidth; // Force reflow
-        mark.classList.add('animate-pulse-soft');
+  // Flash on anchor jumps
+  useEffect(() => {
+    const handleHashJump = () => {
+      const id = window.location.hash?.substring(1);
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) {
+        const mark = el.querySelector('mark');
+        if (mark) {
+          mark.classList.remove('animate-pulse-match');
+          void mark.offsetWidth; // Force reflow
+          mark.classList.add('animate-pulse-match');
+        }
       }
+    };
+
+    window.addEventListener('hashchange', handleHashJump);
+    return () => window.removeEventListener('hashchange', handleHashJump);
+  }, []);
+
+  const handleScrape = async () => {
+    setText('');
+    setLoading(true);
+    setError('');
+    setFlags([]);
+    try {
+      const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      if (res.ok) {
+        setText(data.text);
+        runScreening(data.text, csvData);
+      } else {
+        setError(data.error || 'Unknown error');
+      }
+    } catch (e) {
+      setError(e.message);
     }
+    setLoading(false);
   };
-
-  window.addEventListener('hashchange', handleHashJump);
-  return () => window.removeEventListener('hashchange', handleHashJump);
-}, []);
-
-const handleScrape = async () => {
-  setText(''); // Clear pasted text
-  setLoading(true);
-  setError('');
-  setFlags([]);
-  try {
-    const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
-    const data = await res.json();
-    if (res.ok) {
-      setText(data.text);
-      runScreening(data.text, csvData);
-    } else {
-      setError(data.error || 'Unknown error');
-    }
-  } catch (e) {
-    setError(e.message);
-  }
-  setLoading(false);
-};
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
-        setCsvData(results.data);
-      },
-      error: (err) => {
-        setError('CSV parsing error: ' + err.message);
-      }
+      complete: (results) => setCsvData(results.data),
+      error: (err) => setError('CSV parsing error: ' + err.message),
     });
   };
 
@@ -71,12 +67,12 @@ const handleScrape = async () => {
       const termMap = {
         Primary: [row['Primary Term']],
         Secondary: row['Secondary Terms']?.split(';').map(t => t.trim()).filter(Boolean) || [],
-        Tertiary: row['Tertiary Terms']?.split(';').map(t => t.trim()).filter(Boolean) || []
+        Tertiary: row['Tertiary Terms']?.split(';').map(t => t.trim()).filter(Boolean) || [],
       };
 
       Object.entries(termMap).forEach(([matchType, terms]) => {
         terms.forEach(term => {
-          const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+          const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'gi');
           let match;
           while ((match = regex.exec(inputText)) !== null) {
             results.push({
@@ -86,7 +82,7 @@ const handleScrape = async () => {
               eo: row['Executive Orders'] || '—',
               primary: row['Primary Term'] || '—',
               category: row['Category'] || '—',
-              position: match.index
+              position: match.index,
             });
           }
         });
@@ -104,69 +100,50 @@ const handleScrape = async () => {
     setFlags(deduped);
   };
 
-const getHighlightedText = () => {
-  if (!flags.length) return text;
+  const getHighlightedText = () => {
+    if (!flags.length) return text;
 
-  let lastIndex = 0;
-  let segments = [];
+    let lastIndex = 0;
+    let segments = [];
 
-  flags.forEach((flag, i) => {
-    // Add plain text between matches
+    flags.forEach((flag, i) => {
+      segments.push({
+        start: lastIndex,
+        end: flag.position,
+        text: text.slice(lastIndex, flag.position),
+        highlighted: false,
+      });
+
+      const highlightColor =
+        flag.matchType === 'Primary' || flag.matchType === 'Secondary'
+          ? '#FFA500'
+          : '#FFFF00';
+
+      const matchedText = text.substr(flag.position, flag.term.length);
+
+      segments.push({
+        start: flag.position,
+        end: flag.position + flag.term.length,
+        text: `<a id="ref-${i + 1}"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`
+      });
+
+      lastIndex = flag.position + flag.term.length;
+    });
+
     segments.push({
       start: lastIndex,
-      end: flag.position,
-      text: text.slice(lastIndex, flag.position),
+      end: text.length,
+      text: text.slice(lastIndex),
       highlighted: false,
     });
 
-    const highlightColor =
-      flag.matchType === 'Primary' || flag.matchType === 'Secondary'
-        ? '#FFA500'
-        : '#FFFF00';
+    const fullText = segments.map(seg => seg.text).join('');
+    const paragraphs = fullText.split(/\n\s*\n/);
 
-    const matchedText = text.substr(flag.position, flag.term.length);
-
-    // Add highlighted match with unique anchor and dynamic pulse
-    segments.push({
-      start: flag.position,
-      end: flag.position + flag.term.length,
-      text: `
-        <a id="ref-${i + 1}">
-          <mark style="
-            background-color: ${highlightColor};
-            animation: pulseMatch 1.2s ease-in-out 2;
-          ">${matchedText}</mark>
-        </a>
-        <a href="#flag-${i + 1}">
-          <sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup>
-        </a>
-      `,
-      highlighted: true,
-    });
-
-    lastIndex = flag.position + flag.term.length;
-  });
-
-  // Add any text after the last match
-  segments.push({
-    start: lastIndex,
-    end: text.length,
-    text: text.slice(lastIndex),
-    highlighted: false,
-  });
-
-  // Assemble full text and wrap paragraphs
-  const fullText = segments.map(seg => seg.text).join('');
-  const paragraphs = fullText.split(/\n\s*\n/);
-
-  return paragraphs
-    .map(
-      para =>
-        `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`
-    )
-    .join('');
-};
-
+    return paragraphs
+      .map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`)
+      .join('');
+  };
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -188,7 +165,7 @@ const getHighlightedText = () => {
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">3. Scan Pasted Text</h2>
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste your text here..." className="border border-gray-300 p-2 rounded w-full h-40 mb-3" />
-        <button onClick={() => {setUrl(''); runScreening(text, csvData);}} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
+        <button onClick={() => { setUrl(''); runScreening(text, csvData); }} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
           Scan Pasted Text
         </button>
       </div>
@@ -212,9 +189,7 @@ const getHighlightedText = () => {
               {flags.map((f, i) => (
                 <tr key={i} id={`flag-${i + 1}`} className="scroll-mt-24">
                   <td className="border px-2 py-1">
-                        <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">
-                        {i + 1}
-                        </a>
+                    <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">{i + 1}</a>
                   </td>
                   <td className="border px-2 py-1">{f.term}</td>
                   <td className="border px-2 py-1">{f.matchType}</td>
@@ -233,19 +208,6 @@ const getHighlightedText = () => {
           <div className="text-sm" style={{ lineHeight: '1.7' }} dangerouslySetInnerHTML={{ __html: getHighlightedText() }} />
         </div>
       )}
-      {/* Custom animation style for dynamic highlight pulses */}
-      <div
-        dangerouslySetInnerHTML={{
-          __html: `
-            <style>
-              @keyframes pulseMatch {
-                0%, 100% { filter: brightness(1); }
-                50% { filter: brightness(1.8); }
-              }
-            </style>
-          `
-        }}
-      />
     </div>
   );
 }
