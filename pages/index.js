@@ -116,8 +116,8 @@ export default function Home() {
 
       const highlightColor =
         flag.matchType === 'Primary' || flag.matchType === 'Secondary'
-          ? '#FFA500'
-          : '#FFFF00';
+          ? '#f97316'
+          : '#fbbf24';
 
       const matchedText = text.substr(flag.position, flag.term.length);
 
