@@ -124,7 +124,7 @@ export default function Home() {
       segments.push({
         start: flag.position,
         end: flag.position + flag.term.length,
-        text: `<a id="ref-${i + 1}" class="scroll-mt-24 block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`
+        text: `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`
       });
 
       lastIndex = flag.position + flag.term.length;
