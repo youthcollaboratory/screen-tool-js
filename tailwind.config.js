@@ -18,7 +18,7 @@ module.exports = {
         },
       },
       animation: {
-        'pulse-match': 'pulseMatch 1.2s ease-in-out 2',
+        'pulse-match': 'pulseMatch 1.2s ease-in-out 4',
       },
     },
   },
