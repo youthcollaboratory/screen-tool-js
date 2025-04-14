@@ -14,7 +14,7 @@ module.exports = {
       keyframes: {
         pulseMatch: {
           '0%, 100%': { filter: 'brightness(1)' },
-          '50%': { filter: 'brightness(1.3)' },
+          '50%': { filter: 'brightness(1.8)' },
         },
       },
       animation: {
