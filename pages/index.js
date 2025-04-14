@@ -116,8 +116,8 @@ export default function Home() {
 
       const highlightColor =
         flag.matchType === 'Primary' || flag.matchType === 'Secondary'
-          ? 'fb923c'
-          : '#fbbf24';
+          ? '#fb923c' // orange-400
+          : '#fbbf24'; // yellow-400
 
       const matchedText = text.substr(flag.position, flag.term.length);
 
