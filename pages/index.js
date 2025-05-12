@@ -19,7 +19,7 @@ export default function Home() {
         const mark = el.querySelector('mark');
         if (mark) {
           mark.classList.remove('animate-pulse-match');
-          void mark.offsetWidth; // Force reflow
+          void mark.offsetWidth;
           mark.classList.add('animate-pulse-match');
         }
       }
@@ -59,40 +59,28 @@ export default function Home() {
     });
   };
 
- const runScreening = (inputText, termList) => {
-  const results = [];
+  const runScreening = (inputText, termList) => {
+    const results = [];
 
-  termList.forEach(row => {
-    const term = row['Term']?.trim();
-    if (!term) return;
+    termList.forEach(row => {
+      const term = row['Term']?.trim();
+      if (!term) return;
 
-    const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
-    let match;
-    while ((match = regex.exec(inputText)) !== null) {
-      results.push({
-        term: match[0],
-        flagColor: row['Flag'] || '—',
-        theme: row['Theme'] || '—',
-        notes: row['Notes'] || '—',
-        position: match.index
-      });
-    }
-  });
-
-  // Sort by position in the text
-  const sorted = results.sort((a, b) => a.position - b.position);
-  setFlags(sorted);
-};
-
-    const deduped = Object.values(results.reduce((acc, cur) => {
-      const key = cur.term.toLowerCase() + cur.position;
-      if (!acc[key] || priority[cur.matchType] < priority[acc[key].matchType]) {
-        acc[key] = cur;
+      const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'gi');
+      let match;
+      while ((match = regex.exec(inputText)) !== null) {
+        results.push({
+          term: match[0],
+          flagColor: row['Flag'] || '—',
+          theme: row['Theme'] || '—',
+          notes: row['Notes'] || '—',
+          position: match.index
+        });
       }
-      return acc;
-    }, {})).sort((a, b) => a.position - b.position);
+    });
 
-    setFlags(deduped);
+    const sorted = results.sort((a, b) => a.position - b.position);
+    setFlags(sorted);
   };
 
   const getHighlightedText = () => {
@@ -109,10 +97,10 @@ export default function Home() {
         highlighted: false,
       });
 
-      const highlightColor =
-        flag.matchType === 'Primary' || flag.matchType === 'Secondary'
-          ? '#f97316'
-          : '#facc15';
+      let highlightColor = '#f97316';
+      if (flag.flagColor === 'Yellow') highlightColor = '#facc15';
+      if (flag.flagColor === 'Red') highlightColor = '#f97316';
+      if (flag.flagColor === 'Blue') highlightColor = '#60a5fa';
 
       const matchedText = text.substr(flag.position, flag.term.length);
 
@@ -175,9 +163,9 @@ export default function Home() {
               <tr>
                 <th className="border px-2 py-1">#</th>
                 <th className="border px-2 py-1">Term</th>
-                <th className="border px-2 py-1">Match Type</th>
-                <th className="border px-2 py-1">Primary Term</th>
-                <th className="border px-2 py-1">Reason</th>
+                <th className="border px-2 py-1">Flag</th>
+                <th className="border px-2 py-1">Theme</th>
+                <th className="border px-2 py-1">Notes</th>
               </tr>
             </thead>
             <tbody>
@@ -187,9 +175,9 @@ export default function Home() {
                     <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">{i + 1}</a>
                   </td>
                   <td className="border px-2 py-1">{f.term}</td>
-                  <td className="border px-2 py-1">{f.matchType}</td>
-                  <td className="border px-2 py-1">{f.primary}</td>
-                  <td className="border px-2 py-1">{f.reason}</td>
+                  <td className="border px-2 py-1">{f.flagColor}</td>
+                  <td className="border px-2 py-1">{f.theme}</td>
+                  <td className="border px-2 py-1">{f.notes}</td>
                 </tr>
               ))}
             </tbody>
