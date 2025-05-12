@@ -146,7 +146,7 @@ export default function Home() {
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold mb-2">Communication Screen Tool</h1>
 
-      <div className=\"border border-gray-200 rounded-lg p-4 shadow-sm bg-white\">
+      <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className=\"text-xl font-semibold mb-2\">2. Scan From Webpage</h2>
         <input type=\"text\" value={url} onChange={(e) => setUrl(e.target.value)} placeholder=\"Enter a URL to scrape and scan...\" className=\"border border-gray-300 p-2 rounded w-full mb-3\" />
         <button onClick={handleScrape} disabled={loading} className=\"bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark\">
