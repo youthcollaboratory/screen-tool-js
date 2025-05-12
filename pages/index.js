@@ -59,35 +59,30 @@ export default function Home() {
     });
   };
 
-  const runScreening = (inputText, termList) => {
-    const results = [];
-    const priority = { Primary: 0, Secondary: 1, Tertiary: 2 };
+ const runScreening = (inputText, termList) => {
+  const results = [];
 
-    termList.forEach(row => {
-      const termMap = {
-        Primary: [row['Primary Term']],
-        Secondary: row['Secondary Terms']?.split(';').map(t => t.trim()).filter(Boolean) || [],
-        Tertiary: row['Tertiary Terms']?.split(';').map(t => t.trim()).filter(Boolean) || [],
-      };
+  termList.forEach(row => {
+    const term = row['Term']?.trim();
+    if (!term) return;
 
-      Object.entries(termMap).forEach(([matchType, terms]) => {
-        terms.forEach(term => {
-          const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'gi');
-          let match;
-          while ((match = regex.exec(inputText)) !== null) {
-            results.push({
-              term: match[0],
-              matchType,
-              reason: row['Flag Reason'] || '—',
-              eo: row['Executive Orders'] || '—',
-              primary: row['Primary Term'] || '—',
-              category: row['Category'] || '—',
-              position: match.index,
-            });
-          }
-        });
+    const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+    let match;
+    while ((match = regex.exec(inputText)) !== null) {
+      results.push({
+        term: match[0],
+        flagColor: row['Flag'] || '—',
+        theme: row['Theme'] || '—',
+        notes: row['Notes'] || '—',
+        position: match.index
       });
-    });
+    }
+  });
+
+  // Sort by position in the text
+  const sorted = results.sort((a, b) => a.position - b.position);
+  setFlags(sorted);
+};
 
     const deduped = Object.values(results.reduce((acc, cur) => {
       const key = cur.term.toLowerCase() + cur.position;
