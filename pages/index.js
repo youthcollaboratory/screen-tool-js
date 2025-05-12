@@ -142,7 +142,7 @@ export default function Home() {
       <h1 className="text-3xl font-bold mb-2">Communication Screen Tool</h1>
 
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
-        <h2 className="text-xl font-semibold mb-2">2. Scan From Webpage</h2>
+        <h2 className="text-xl font-semibold mb-2">1. Scan From Webpage</h2>
         <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a URL to scrape and scan..." className="border border-gray-300 p-2 rounded w-full mb-3" />
         <button onClick={handleScrape} disabled={loading} className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark">
           {loading ? 'Scraping...' : 'Scrape and Scan'}
@@ -150,7 +150,7 @@ export default function Home() {
       </div>
 
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
-        <h2 className="text-xl font-semibold mb-2">3. Scan Pasted Text</h2>
+        <h2 className="text-xl font-semibold mb-2">2. Scan Pasted Text</h2>
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste your text here..." className="border border-gray-300 p-2 rounded w-full h-40 mb-3" />
         <button onClick={() => { setUrl(''); runScreening(text, csvData); }} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
           Scan Pasted Text
