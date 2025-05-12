@@ -121,7 +121,7 @@ export default function Home() {
       segments.push({
         start: flag.position,
         end: flag.position + flag.term.length,
-        text: `<a id=\"ref-${i + 1}\" class=\"scroll-mt-24 inline-block\"><mark class=\"animate-pulse-match\" style=\"background-color: ${highlightColor};\">${matchedText}</mark></a><a href=\"#flag-${i + 1}\"><sup style=\"font-size: 0.7em; vertical-align: super; margin-left: 2px;\">[${i + 1}]</sup></a>`
+        text: `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`
       });
 
       lastIndex = flag.position + flag.term.length;
@@ -138,12 +138,12 @@ export default function Home() {
     const paragraphs = fullText.split(/\n\s*\n/);
 
     return paragraphs
-      .map(para => `<p style=\"margin-bottom: 1em; line-height: 1.7;\">${para.trim()}</p>`)
+      .map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`)
       .join('');
   };
 
   return (
-    <div className=\"p-6 max-w-3xl mx-auto space-y-6\">
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
       <h1 className=\"text-3xl font-bold mb-2\">Communication Screen Tool</h1>
 
       <div className=\"border border-gray-200 rounded-lg p-4 shadow-sm bg-white\">
