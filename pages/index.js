@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv96fMnm7vecd2DfpPZ0h4jwK94rG-QNIjyH5fbqx7p5hddM9iJEgpK1gnAYOUZ55VrlqWxE9O7EKg/pub?gid=143046203&single=true&output=csv';
+
 export default function Home() {
   const [url, setUrl] = useState('');
   const [text, setText] = useState('');
@@ -9,7 +11,24 @@ export default function Home() {
   const [flags, setFlags] = useState([]);
   const [csvData, setCsvData] = useState([]);
 
-  // Flash on anchor jumps
+  useEffect(() => {
+    const fetchTermsFromSheet = async () => {
+      try {
+        const res = await fetch(SHEET_CSV_URL);
+        const text = await res.text();
+        Papa.parse(text, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => setCsvData(results.data),
+          error: (err) => setError('Failed to parse dictionary: ' + err.message),
+        });
+      } catch (err) {
+        setError('Failed to load dictionary from Google Sheets.');
+      }
+    };
+    fetchTermsFromSheet();
+  }, []);
+
   useEffect(() => {
     const handleHashJump = () => {
       const id = window.location.hash?.substring(1);
@@ -47,16 +66,6 @@ export default function Home() {
       setError(e.message);
     }
     setLoading(false);
-  };
-
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => setCsvData(results.data),
-      error: (err) => setError('CSV parsing error: ' + err.message),
-    });
   };
 
   const runScreening = (inputText, termList) => {
@@ -131,11 +140,6 @@ export default function Home() {
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold mb-2">Communication Screen Tool</h1>
-
-      <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
-        <h2 className="text-xl font-semibold mb-2">1. Upload Screening Terms</h2>
-        <input type="file" accept=".csv" onChange={handleFileUpload} className="block text-sm" />
-      </div>
 
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">2. Scan From Webpage</h2>
