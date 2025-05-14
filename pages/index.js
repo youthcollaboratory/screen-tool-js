@@ -202,7 +202,7 @@ export default function Home() {
       )}
 
       {!scanning && text && flags.length > 0 && (
-        <div className="mt-6 bg-gray-50 p-4 border rounded\">
+        <div className="mt-6 bg-gray-50 p-4 border rounded">
           <h2 className="font-semibold mb-2">Screened Content</h2>
           <div className="text-sm" style={{ lineHeight: '1.7' }} dangerouslySetInnerHTML={{ __html: getHighlightedText() }} />
         </div>
