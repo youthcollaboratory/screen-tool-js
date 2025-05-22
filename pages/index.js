@@ -72,7 +72,7 @@ export default function Home() {
     setLoading(false);
   };
 
-  const handlePDFUpload = async (file) => {
+ const handlePDFUpload = async (file) => {
   setUrl('');
   setText('');
   setFlags([]);
@@ -80,34 +80,50 @@ export default function Home() {
   setScanning(true);
 
   try {
+    if (!file || !(file instanceof Blob)) {
+      throw new Error('No valid PDF file selected.');
+    }
+
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
 
-    // Use public CDN version of the PDF worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.worker.min.js`;
 
     const reader = new FileReader();
+
     reader.onload = async () => {
-      const typedArray = new Uint8Array(reader.result);
-      const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+      try {
+        const typedArray = new Uint8Array(reader.result);
+        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
 
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items.map((item) => item.str).join(' ');
-        fullText += pageText + '\n\n';
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map((item) => item.str).join(' ');
+          fullText += pageText + '\n\n';
+        }
+
+        setText(fullText);
+        runScreening(fullText, csvData);
+      } catch (innerErr) {
+        setError('Error parsing PDF: ' + innerErr.message);
+      } finally {
+        setScanning(false);
       }
+    };
 
-      setText(fullText);
-      runScreening(fullText, csvData);
+    reader.onerror = () => {
+      setError('Error reading the PDF file.');
+      setScanning(false);
     };
 
     reader.readAsArrayBuffer(file);
-  } catch (err) {
+    } catch (err) {
     setError('Failed to read PDF: ' + err.message);
     setScanning(false);
-  }
-};
+    }
+  };
+
 
   const runScreening = (inputText, termList) => {
     const results = [];
