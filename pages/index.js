@@ -73,34 +73,34 @@ export default function Home() {
   };
 
   const handlePDFUpload = async (file) => {
-    setUrl('');
-    setText('');
-    setFlags([]);
-    setError('');
-    setScanning(true);
+  setUrl('');
+  setText('');
+  setFlags([]);
+  setError('');
+  setScanning(true);
 
-    try {
-      const pdfjsLib = await import('pdfjs-dist/build/pdf');
-      const workerSrc = await import('pdfjs-dist/build/pdf.worker.js');
+  try {
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
+    const workerSrc = await import('pdfjs-dist/legacy/build/pdf.worker.js');
 
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc.default;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc.default;
 
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const typedArray = new Uint8Array(reader.result);
-        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const typedArray = new Uint8Array(reader.result);
+      const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
 
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          const pageText = content.items.map((item) => item.str).join(' ');
-          fullText += pageText + '\n\n';
-        }
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        const pageText = content.items.map((item) => item.str).join(' ');
+        fullText += pageText + '\n\n';
+      }
 
-        setText(fullText);
-        runScreening(fullText, csvData);
-      };
+      setText(fullText);
+      runScreening(fullText, csvData);
+    };
 
       reader.readAsArrayBuffer(file);
     } catch (err) {
