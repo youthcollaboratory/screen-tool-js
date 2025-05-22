@@ -54,7 +54,7 @@ export default function Home() {
     setLoading(true);
     setScanning(true);
     setError('');
-    setFlags([]);
+    set([]);
     try {
       const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
       const data = await res.json();
@@ -75,7 +75,7 @@ export default function Home() {
   const handlePDFUpload = async (file) => {
     setUrl('');
     setText('');
-    setFlags([]);
+    set([]);
     setError('');
     setScanning(true);
 
@@ -130,17 +130,17 @@ export default function Home() {
     });
 
     const sorted = results.sort((a, b) => a.position - b.position);
-    setFlags(sorted);
+    set(sorted);
     setScanning(false);
   };
 
   const getHighlightedText = () => {
-    if (!flags.length) return text;
+    if (!.length) return text;
 
     let lastIndex = 0;
     let segments = [];
 
-    flags.forEach((flag, i) => {
+    .forEach((flag, i) => {
       segments.push({
         start: lastIndex,
         end: flag.position,
@@ -212,7 +212,7 @@ export default function Home() {
       {error && <p className="text-red-600">Error: {error}</p>}
       {scanning && <p className="text-gray-600 italic">Scan in progress...</p>}
 
-      {!scanning && flags.length > 0 && (
+      {!scanning && .length > 0 && (
         <div className="my-6">
           <h2 className="font-semibold mb-2">Flagged Terms</h2>
           <table className="table-auto border-collapse w-full text-sm bg-white shadow-sm rounded">
