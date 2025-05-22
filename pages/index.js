@@ -84,12 +84,12 @@ export default function Home() {
       throw new Error('No valid PDF file selected.');
     }
 
-    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
+    const pdfjsLib = await import('pdfjs-dist/build/pdf');
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.worker.min.js`;
+    // Set local fallback worker path — Vercel will bundle this
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 
     const reader = new FileReader();
-
     reader.onload = async () => {
       try {
         const typedArray = new Uint8Array(reader.result);
@@ -112,18 +112,12 @@ export default function Home() {
       }
     };
 
-    reader.onerror = () => {
-      setError('Error reading the PDF file.');
-      setScanning(false);
-    };
-
     reader.readAsArrayBuffer(file);
     } catch (err) {
-    setError('Failed to read PDF: ' + err.message);
-    setScanning(false);
+      setError('Failed to read PDF: ' + err.message);
+      setScanning(false);
     }
   };
-
 
   const runScreening = (inputText, termList) => {
     const results = [];
