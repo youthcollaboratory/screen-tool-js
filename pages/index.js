@@ -81,9 +81,9 @@ export default function Home() {
 
   try {
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
-    const workerSrc = await import('pdfjs-dist/legacy/build/pdf.worker.js');
 
-    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc.default;
+    // Use public CDN for worker — avoids bundling issues
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.worker.min.js`;
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -102,12 +102,12 @@ export default function Home() {
       runScreening(fullText, csvData);
     };
 
-      reader.readAsArrayBuffer(file);
-    } catch (err) {
-      setError('Failed to read PDF: ' + err.message);
-      setScanning(false);
-    }
-  };
+    reader.readAsArrayBuffer(file);
+  } catch (err) {
+    setError('Failed to read PDF: ' + err.message);
+    setScanning(false);
+  }
+};
 
   const runScreening = (inputText, termList) => {
     const results = [];
