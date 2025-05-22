@@ -1,44 +1,6 @@
 import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 
-const handlePDFUpload = async (file) => {
-  setUrl('');
-  setText('');
-  setFlags([]);
-  setError('');
-  setScanning(true);
-
-  try {
-    const pdfjsLib = await import('pdfjs-dist/build/pdf');
-    const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
-
-    // Assign worker
-    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const typedArray = new Uint8Array(reader.result);
-      const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
-
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const pageText = content.items.map((item) => item.str).join(' ');
-        fullText += pageText + '\n\n';
-      }
-
-      setText(fullText);
-      runScreening(fullText, csvData);
-    };
-
-    reader.readAsArrayBuffer(file);
-  } catch (err) {
-    setError('Failed to read PDF: ' + err.message);
-    setScanning(false);
-  }
-};
-
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv96fMnm7vecd2DfpPZ0h4jwK94rG-QNIjyH5fbqx7p5hddM9iJEgpK1gnAYOUZ55VrlqWxE9O7EKg/pub?gid=143046203&single=true&output=csv';
 
 export default function Home() {
@@ -118,6 +80,11 @@ export default function Home() {
     setScanning(true);
 
     try {
+      const pdfjsLib = await import('pdfjs-dist/build/pdf');
+      const workerSrc = await import('pdfjs-dist/build/pdf.worker.js');
+
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc.default;
+
       const reader = new FileReader();
       reader.onload = async () => {
         const typedArray = new Uint8Array(reader.result);
@@ -134,6 +101,7 @@ export default function Home() {
         setText(fullText);
         runScreening(fullText, csvData);
       };
+
       reader.readAsArrayBuffer(file);
     } catch (err) {
       setError('Failed to read PDF: ' + err.message);
@@ -272,20 +240,3 @@ export default function Home() {
             </tbody>
           </table>
         </div>
-      )}
-
-      {!scanning && text && flags.length === 0 && (
-        <div className="mt-6 bg-gray-50 p-4 border rounded">
-          <h2 className="font-semibold mb-2">No flagged terms found.</h2>
-        </div>
-      )}
-
-      {!scanning && text && flags.length > 0 && (
-        <div className="mt-6 bg-gray-50 p-4 border rounded">
-          <h2 className="font-semibold mb-2">Screened Content</h2>
-          <div className="text-sm" style={{ lineHeight: '1.7' }} dangerouslySetInnerHTML={{ __html: getHighlightedText() }} />
-        </div>
-      )}
-    </div>
-  );
-}
