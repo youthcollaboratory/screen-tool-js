@@ -226,17 +226,19 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-              {flags.map((f, i) => (
-                <tr key={i} id={`flag-${i + 1}`} className="scroll-mt-24">
-                  <td className="border px-2 py-1">
-                    <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">{i + 1}</a>
-                  </td>
-                  <td className="border px-2 py-1">{f.term}</td>
-                  <td className="border px-2 py-1">{f.flagColor}</td>
-                  <td className="border px-2 py-1">{f.theme}</td>
-                  <td className="border px-2 py-1">{f.notes}</td>
-                </tr>
-              ))}
+              {flags.map((f, i) => {
+                return (
+                  <tr key={i} id={`flag-${i + 1}`} className="scroll-mt-24">
+                    <td className="border px-2 py-1">
+                      <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">{i + 1}</a>
+                    </td>
+                    <td className="border px-2 py-1">{f.term}</td>
+                    <td className="border px-2 py-1">{f.flagColor}</td>
+                    <td className="border px-2 py-1">{f.theme}</td>
+                    <td className="border px-2 py-1">{f.notes}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
