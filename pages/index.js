@@ -140,7 +140,7 @@ export default function Home() {
     let lastIndex = 0;
     let segments = [];
 
-    .forEach((flag, i) => {
+    flags.forEach((flag, i) => {
       segments.push({
         start: lastIndex,
         end: flag.position,
