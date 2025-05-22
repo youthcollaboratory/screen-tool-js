@@ -9,7 +9,11 @@ const handlePDFUpload = async (file) => {
   setScanning(true);
 
   try {
-    const pdfjsLib = await import('pdfjs-dist/webpack');
+    const pdfjsLib = await import('pdfjs-dist/build/pdf');
+    const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
+
+    // Assign worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
     const reader = new FileReader();
     reader.onload = async () => {
@@ -27,6 +31,7 @@ const handlePDFUpload = async (file) => {
       setText(fullText);
       runScreening(fullText, csvData);
     };
+
     reader.readAsArrayBuffer(file);
   } catch (err) {
     setError('Failed to read PDF: ' + err.message);
