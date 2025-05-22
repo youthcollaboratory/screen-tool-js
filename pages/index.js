@@ -135,7 +135,7 @@ export default function Home() {
   };
 
   const getHighlightedText = () => {
-    if (!.length) return text;
+    if (!flags.length) return text;
 
     let lastIndex = 0;
     let segments = [];
