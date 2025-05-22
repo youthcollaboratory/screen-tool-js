@@ -54,7 +54,7 @@ export default function Home() {
     setLoading(true);
     setScanning(true);
     setError('');
-    set([]);
+    setFlags([]);
     try {
       const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
       const data = await res.json();
@@ -75,7 +75,7 @@ export default function Home() {
   const handlePDFUpload = async (file) => {
     setUrl('');
     setText('');
-    set([]);
+    setFlags([]);
     setError('');
     setScanning(true);
 
@@ -130,7 +130,7 @@ export default function Home() {
     });
 
     const sorted = results.sort((a, b) => a.position - b.position);
-    set(sorted);
+    setFlags(sorted);
     setScanning(false);
   };
 
@@ -201,12 +201,7 @@ export default function Home() {
 
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">Scan a PDF</h2>
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={(e) => handlePDFUpload(e.target.files[0])}
-          className="mb-3"
-        />
+        <input type="file" accept="application/pdf" onChange={(e) => handlePDFUpload(e.target.files[0])} className="mb-3" />
       </div>
 
       {error && <p className="text-red-600">Error: {error}</p>}
@@ -242,3 +237,20 @@ export default function Home() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {!scanning && text && flags.length === 0 && (
+        <div className="mt-6 bg-gray-50 p-4 border rounded">
+          <h2 className="font-semibold mb-2">No flagged terms found.</h2>
+        </div>
+      )}
+
+      {!scanning && text && flags.length > 0 && (
+        <div className="mt-6 bg-gray-50 p-4 border rounded">
+          <h2 className="font-semibold mb-2">Screened Content</h2>
+          <div className="text-sm" style={{ lineHeight: '1.7' }} dangerouslySetInnerHTML={{ __html: getHighlightedText() }} />
+        </div>
+      )}
+    </div>
+  );
+}
