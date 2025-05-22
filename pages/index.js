@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
+import * as pdfjsLib from 'pdfjs-dist/webpack';
 
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv96fMnm7vecd2DfpPZ0h4jwK94rG-QNIjyH5fbqx7p5hddM9iJEgpK1gnAYOUZ55VrlqWxE9O7EKg/pub?gid=143046203&single=true&output=csv';
 
@@ -70,6 +71,37 @@ export default function Home() {
       setScanning(false);
     }
     setLoading(false);
+  };
+
+  const handlePDFUpload = async (file) => {
+    setUrl('');
+    setText('');
+    setFlags([]);
+    setError('');
+    setScanning(true);
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const typedArray = new Uint8Array(reader.result);
+        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map((item) => item.str).join(' ');
+          fullText += pageText + '\n\n';
+        }
+
+        setText(fullText);
+        runScreening(fullText, csvData);
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      setError('Failed to read PDF: ' + err.message);
+      setScanning(false);
+    }
   };
 
   const runScreening = (inputText, termList) => {
@@ -160,6 +192,16 @@ export default function Home() {
         <button onClick={() => { setUrl(''); setScanning(true); runScreening(text, csvData); }} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
           Scan Pasted Text
         </button>
+      </div>
+
+      <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
+        <h2 className="text-xl font-semibold mb-2">Scan a PDF</h2>
+        <input
+          type="file"
+          accept="application/pdf"
+          onChange={(e) => handlePDFUpload(e.target.files[0])}
+          className="mb-3"
+        />
       </div>
 
       {error && <p className="text-red-600">Error: {error}</p>}
