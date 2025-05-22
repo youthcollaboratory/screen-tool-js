@@ -212,7 +212,7 @@ export default function Home() {
       {error && <p className="text-red-600">Error: {error}</p>}
       {scanning && <p className="text-gray-600 italic">Scan in progress...</p>}
 
-      {!scanning && .length > 0 && (
+      {!scanning && flags.length > 0 && (
         <div className="my-6">
           <h2 className="font-semibold mb-2">Flagged Terms</h2>
           <table className="table-auto border-collapse w-full text-sm bg-white shadow-sm rounded">
