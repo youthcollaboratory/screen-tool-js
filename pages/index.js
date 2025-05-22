@@ -82,7 +82,7 @@ export default function Home() {
   try {
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf');
 
-    // Use public CDN for worker — avoids bundling issues
+    // Use public CDN version of the PDF worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.0.269/pdf.worker.min.js`;
 
     const reader = new FileReader();
