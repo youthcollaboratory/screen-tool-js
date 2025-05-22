@@ -211,7 +211,18 @@ export default function Home() {
 
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">Scan a PDF</h2>
-        <input type="file" accept="application/pdf" onChange={(e) => handlePDFUpload(e.target.files[0])} className="mb-3" />
+            <input
+              type="file"
+              accept="application/pdf"
+              id="pdf-upload"
+              className="hidden"
+              onChange={(e) => handlePDFUpload(e.target.files[0])}
+            />
+          <button
+            onClick={() => document.getElementById('pdf-upload').click()}
+            className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark">
+            Upload PDF
+          </button>
       </div>
 
       {error && <p className="text-red-600">Error: {error}</p>}
