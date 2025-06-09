@@ -72,64 +72,61 @@ export default function Home() {
     setLoading(false);
   };
 
- const handlePDFUpload = async (file) => {
-  setUrl('');
-  setText('');
-  setFlags([]);
-  setError('');
-  setScanning(true);
+  const handlePDFUpload = async (file) => {
+    setUrl('');
+    setText('');
+    setFlags([]);
+    setError('');
+    setScanning(true);
 
-  try {
-    if (!file || !(file instanceof Blob)) {
-      throw new Error('No valid PDF file selected.');
-    }
-
-    const pdfjsLib = await import('pdfjs-dist/build/pdf');
-
-    // Set local fallback worker path — Vercel will bundle this
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
-
-    const reader = new FileReader();
-    reader.onload = async () => {
-      try {
-        const typedArray = new Uint8Array(reader.result);
-        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
-
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          const pageText = content.items.map((item) => item.str).join(' ');
-          fullText += pageText + '\n\n';
-        }
-
-        setText(fullText);
-        runScreening(fullText, csvData);
-      } catch (innerErr) {
-        setError('Error parsing PDF: ' + innerErr.message);
-      } finally {
-        setScanning(false);
+    try {
+      if (!file || !(file instanceof Blob)) {
+        throw new Error('No valid PDF file selected.');
       }
-    };
 
-    reader.readAsArrayBuffer(file);
+      const pdfjsLib = await import('pdfjs-dist/build/pdf');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const typedArray = new Uint8Array(reader.result);
+          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+
+          let fullText = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageText = content.items.map((item) => item.str).join(' ');
+            fullText += pageText + '\n\n';
+          }
+
+          setText(fullText);
+          runScreening(fullText, csvData);
+        } catch (innerErr) {
+          setError('Error parsing PDF: ' + innerErr.message);
+        } finally {
+          setScanning(false);
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
     } catch (err) {
       setError('Failed to read PDF: ' + err.message);
       setScanning(false);
     }
   };
 
-   const runScreening = (inputText, termList) => {
+  const runScreening = (inputText, termList) => {
     const allMatches = [];
-  
-    // Step 1: Find all matches (partial and internal)
+
     termList.forEach(row => {
       const term = row['Term']?.trim();
       if (!term) return;
-  
+
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(escaped, 'gi');
-  
+
       let match;
       while ((match = regex.exec(inputText)) !== null) {
         allMatches.push({
@@ -142,32 +139,24 @@ export default function Home() {
         });
       }
     });
-  
-    // Step 2: Sort matches by start index, then by length
+
     allMatches.sort((a, b) => {
       if (a.start !== b.start) return a.start - b.start;
-      return b.end - b.start - (a.end - a.start); // prefer longer match
+      return b.end - b.start - (a.end - a.start);
     });
-  
-    // Step 3: Filter out overlaps
+
     const nonOverlapping = [];
     let lastEnd = -1;
-  
+
     for (const match of allMatches) {
       if (match.start >= lastEnd) {
         nonOverlapping.push(match);
         lastEnd = match.end;
       }
     }
-  
-    // Step 4: Set final results (removing 'end' for display purposes)
+
     const sorted = nonOverlapping.map(({ end, ...rest }) => rest);
 
-  setFlags(sorted);
-  setScanning(false);
-};
-
-    const sorted = results.sort((a, b) => a.position - b.position);
     setFlags(sorted);
     setScanning(false);
   };
@@ -181,8 +170,8 @@ export default function Home() {
     flags.forEach((flag, i) => {
       segments.push({
         start: lastIndex,
-        end: flag.position,
-        text: text.slice(lastIndex, flag.position),
+        end: flag.start,
+        text: text.slice(lastIndex, flag.start),
         highlighted: false,
       });
 
@@ -191,15 +180,15 @@ export default function Home() {
       if (flag.flagColor === 'Red') highlightColor = '#f97316';
       if (flag.flagColor === 'Blue') highlightColor = '#60a5fa';
 
-      const matchedText = text.substr(flag.position, flag.term.length);
+      const matchedText = text.substr(flag.start, flag.term.length);
 
       segments.push({
-        start: flag.position,
-        end: flag.position + flag.term.length,
+        start: flag.start,
+        end: flag.start + flag.term.length,
         text: `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`
       });
 
-      lastIndex = flag.position + flag.term.length;
+      lastIndex = flag.start + flag.term.length;
     });
 
     segments.push({
@@ -239,18 +228,10 @@ export default function Home() {
 
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">Scan a PDF</h2>
-            <input
-              type="file"
-              accept="application/pdf"
-              id="pdf-upload"
-              className="hidden"
-              onChange={(e) => handlePDFUpload(e.target.files[0])}
-            />
-          <button
-            onClick={() => document.getElementById('pdf-upload').click()}
-            className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark">
-            Upload PDF
-          </button>
+        <input type="file" accept="application/pdf" id="pdf-upload" className="hidden" onChange={(e) => handlePDFUpload(e.target.files[0])} />
+        <button onClick={() => document.getElementById('pdf-upload').click()} className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark">
+          Upload PDF
+        </button>
       </div>
 
       {error && <p className="text-red-600">Error: {error}</p>}
@@ -270,19 +251,17 @@ export default function Home() {
               </tr>
             </thead>
             <tbody>
-              {flags.map((f, i) => {
-                return (
-                  <tr key={i} id={`flag-${i + 1}`} className="scroll-mt-24">
-                    <td className="border px-2 py-1">
-                      <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">{i + 1}</a>
-                    </td>
-                    <td className="border px-2 py-1">{f.term}</td>
-                    <td className="border px-2 py-1">{f.flagColor}</td>
-                    <td className="border px-2 py-1">{f.theme}</td>
-                    <td className="border px-2 py-1">{f.notes}</td>
-                  </tr>
-                );
-              })}
+              {flags.map((f, i) => (
+                <tr key={i} id={`flag-${i + 1}`} className="scroll-mt-24">
+                  <td className="border px-2 py-1">
+                    <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">{i + 1}</a>
+                  </td>
+                  <td className="border px-2 py-1">{f.term}</td>
+                  <td className="border px-2 py-1">{f.flagColor}</td>
+                  <td className="border px-2 py-1">{f.theme}</td>
+                  <td className="border px-2 py-1">{f.notes}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
