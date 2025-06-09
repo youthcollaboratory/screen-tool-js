@@ -119,25 +119,53 @@ export default function Home() {
     }
   };
 
-  const runScreening = (inputText, termList) => {
-    const results = [];
-
+   const runScreening = (inputText, termList) => {
+    const allMatches = [];
+  
+    // Step 1: Find all matches (partial and internal)
     termList.forEach(row => {
       const term = row['Term']?.trim();
       if (!term) return;
-
-      const regex = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}\\b`, 'gi');
+  
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'gi');
+  
       let match;
       while ((match = regex.exec(inputText)) !== null) {
-        results.push({
+        allMatches.push({
           term: match[0],
           flagColor: row['Flag'] || '—',
           theme: row['Theme'] || '—',
           notes: row['Notes'] || '—',
-          position: match.index
+          start: match.index,
+          end: match.index + match[0].length
         });
       }
     });
+  
+    // Step 2: Sort matches by start index, then by length
+    allMatches.sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start;
+      return b.end - b.start - (a.end - a.start); // prefer longer match
+    });
+  
+    // Step 3: Filter out overlaps
+    const nonOverlapping = [];
+    let lastEnd = -1;
+  
+    for (const match of allMatches) {
+      if (match.start >= lastEnd) {
+        nonOverlapping.push(match);
+        lastEnd = match.end;
+      }
+    }
+  
+    // Step 4: Set final results (removing 'end' for display purposes)
+    const sorted = nonOverlapping.map(({ end, ...rest }) => rest);
+
+  setFlags(sorted);
+  setScanning(false);
+};
 
     const sorted = results.sort((a, b) => a.position - b.position);
     setFlags(sorted);
