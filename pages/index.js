@@ -124,9 +124,13 @@ export default function Home() {
 
   // Helper: Expand matched fragment to whole containing word
   const extractContainingWord = (text, matchIndex) => {
-    const left = text.slice(0, matchIndex).match(/\b\w+$/)?.[0] || '';
-    const right = text.slice(matchIndex).match(/^\w+/)?.[0] || '';
-    return left + right;
+    const leftMatch = text.slice(0, matchIndex).match(/\b\w+$/);
+    const rightMatch = text.slice(matchIndex).match(/^\w+/);
+    const left = leftMatch?.[0] || '';
+    const right = rightMatch?.[0] || '';
+    const word = left + right;
+    const start = matchIndex - left.length;
+    return { word, start };
   };
 
   termList.forEach(row => {
@@ -138,13 +142,14 @@ export default function Home() {
 
     let match;
     while ((match = regex.exec(inputText)) !== null) {
+      const { word, start } = extractContainingWord(inputText, match.index);
       allMatches.push({
-        term: extractContainingWord(inputText, match.index),
+        term: word,
         flagColor: row['Flag'] || '—',
         theme: row['Theme'] || '—',
         notes: row['Notes'] || '—',
-        start: match.index,
-        end: match.index + match[0].length
+        start: start,
+        end: start + word.length
       });
     }
   });
