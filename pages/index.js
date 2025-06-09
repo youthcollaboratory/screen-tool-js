@@ -11,6 +11,7 @@ export default function Home() {
   const [error, setError] = useState('');
   const [flags, setFlags] = useState([]);
   const [csvData, setCsvData] = useState([]);
+  const [scanComplete, setScanComplete] = useState(false);
 
   useEffect(() => {
     const fetchTermsFromSheet = async () => {
@@ -55,6 +56,7 @@ export default function Home() {
     setScanning(true);
     setError('');
     setFlags([]);
+    setScanComplete(false);
     try {
       const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
       const data = await res.json();
@@ -159,6 +161,7 @@ export default function Home() {
 
     setFlags(sorted);
     setScanning(false);
+    setScanComplete(true);
   };
 
   const getHighlightedText = () => {
@@ -221,7 +224,7 @@ export default function Home() {
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">Scan Pasted Text</h2>
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste your text here..." className="border border-gray-300 p-2 rounded w-full h-40 mb-3" />
-        <button onClick={() => { setUrl(''); setScanning(true); runScreening(text, csvData); }} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
+        <button onClick={() => { setUrl(''); setScanning(true); setScanComplete(false); runScreening(text, csvData); }} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
           Scan Pasted Text
         </button>
       </div>
@@ -267,7 +270,7 @@ export default function Home() {
         </div>
       )}
 
-      {!scanning && text && flags.length === 0 && (
+      {!scanning && scanComplete && flags.length === 0 && (
         <div className="mt-6 bg-gray-50 p-4 border rounded">
           <h2 className="font-semibold mb-2">No flagged terms found.</h2>
         </div>
