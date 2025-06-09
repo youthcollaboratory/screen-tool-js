@@ -122,14 +122,10 @@ export default function Home() {
   const runScreening = (inputText, termList) => {
     const allMatches = [];
 
-    const extractContainingWord = (text, matchIndex) => {
-      const leftMatch = text.slice(0, matchIndex).match(/\b\w+$/);
-      const rightMatch = text.slice(matchIndex).match(/^\w+/);
-      const left = leftMatch?.[0] || '';
-      const right = rightMatch?.[0] || '';
-      const word = left + right;
-      const start = matchIndex - left.length;
-      return { word, start };
+    const extractContainingWord = (text, index) => {
+      const wordMatch = text.slice(index).match(/^\w+/);
+      const word = wordMatch?.[0] || '';
+      return { word, start: index, end: index + word.length };
     };
 
     termList.forEach(row => {
@@ -141,8 +137,8 @@ export default function Home() {
 
       let match;
       while ((match = regex.exec(inputText)) !== null) {
-        const { word, start } = extractContainingWord(inputText, match.index);
-        const matchType = (term.toLowerCase() === word.toLowerCase()) ? 'Full' : 'Partial';
+        const { word, start, end } = extractContainingWord(inputText, match.index);
+        const matchType = (term.toLowerCase() === word.toLowerCase()) ? 'Full' : 'Partial'; 
         allMatches.push({
           displayTerm: word,
           term,
@@ -151,7 +147,7 @@ export default function Home() {
           theme: row['Theme'] || '—',
           notes: row['Notes'] || '—',
           start,
-          end: start + word.length
+          end
         });
       }
     });
