@@ -120,62 +120,61 @@ export default function Home() {
   };
 
   const runScreening = (inputText, termList) => {
-  const allMatches = [];
+    const allMatches = [];
 
-  // Helper: Expand matched fragment to whole containing word
-  const extractContainingWord = (text, matchIndex) => {
-    const leftMatch = text.slice(0, matchIndex).match(/\b\w+$/);
-    const rightMatch = text.slice(matchIndex).match(/^\w+/);
-    const left = leftMatch?.[0] || '';
-    const right = rightMatch?.[0] || '';
-    const word = left + right;
-    const start = matchIndex - left.length;
-    return { word, start };
+    const extractContainingWord = (text, matchIndex) => {
+      const leftMatch = text.slice(0, matchIndex).match(/\b\w+$/);
+      const rightMatch = text.slice(matchIndex).match(/^\w+/);
+      const left = leftMatch?.[0] || '';
+      const right = rightMatch?.[0] || '';
+      const word = left + right;
+      const start = matchIndex - left.length;
+      return { word, start };
+    };
+
+    termList.forEach(row => {
+      const term = row['Term']?.trim();
+      if (!term) return;
+
+      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'gi');
+
+      let match;
+      while ((match = regex.exec(inputText)) !== null) {
+        const { word, start } = extractContainingWord(inputText, match.index);
+        const matchType = (term.toLowerCase() === word.toLowerCase()) ? 'Full' : 'Partial';
+        allMatches.push({
+          term,
+          matchType,
+          flagColor: row['Flag'] || '—',
+          theme: row['Theme'] || '—',
+          notes: row['Notes'] || '—',
+          start,
+          end: start + word.length
+        });
+      }
+    });
+
+    allMatches.sort((a, b) => {
+      if (a.start !== b.start) return a.start - b.start;
+      return b.end - b.start - (a.end - a.start);
+    });
+
+    const nonOverlapping = [];
+    let lastEnd = -1;
+
+    for (const match of allMatches) {
+      if (match.start >= lastEnd) {
+        nonOverlapping.push(match);
+        lastEnd = match.end;
+      }
+    }
+
+    const sorted = nonOverlapping.map(({ end, ...rest }) => rest);
+    setFlags(sorted);
+    setScanning(false);
+    setScanComplete(true);
   };
-
-  termList.forEach(row => {
-    const term = row['Term']?.trim();
-    if (!term) return;
-
-    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(escaped, 'gi');
-
-    let match;
-    while ((match = regex.exec(inputText)) !== null) {
-      const { word, start } = extractContainingWord(inputText, match.index);
-      allMatches.push({
-        term: word,
-        flagColor: row['Flag'] || '—',
-        theme: row['Theme'] || '—',
-        notes: row['Notes'] || '—',
-        start: start,
-        end: start + word.length
-      });
-    }
-  });
-
-  allMatches.sort((a, b) => {
-    if (a.start !== b.start) return a.start - b.start;
-    return b.end - b.start - (a.end - a.start);
-  });
-
-  const nonOverlapping = [];
-  let lastEnd = -1;
-
-  for (const match of allMatches) {
-    if (match.start >= lastEnd) {
-      nonOverlapping.push(match);
-      lastEnd = match.end;
-    }
-  }
-
-  const sorted = nonOverlapping.map(({ end, ...rest }) => rest);
-
-  setFlags(sorted);
-  setScanning(false);
-  setScanComplete(true); // Don't forget this line from the previous fix
-};
-
 
   const getHighlightedText = () => {
     if (!flags.length) return text;
@@ -196,15 +195,15 @@ export default function Home() {
       if (flag.flagColor === 'Red') highlightColor = '#f97316';
       if (flag.flagColor === 'Blue') highlightColor = '#60a5fa';
 
-      const matchedText = text.substr(flag.start, flag.term.length);
+      const matchedText = text.substr(flag.start, flag.end - flag.start);
 
       segments.push({
         start: flag.start,
-        end: flag.start + flag.term.length,
+        end: flag.end,
         text: `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`
       });
 
-      lastIndex = flag.start + flag.term.length;
+      lastIndex = flag.end;
     });
 
     segments.push({
@@ -261,6 +260,7 @@ export default function Home() {
               <tr>
                 <th className="border px-2 py-1">#</th>
                 <th className="border px-2 py-1">Term</th>
+                <th className="border px-2 py-1">Match Type</th>
                 <th className="border px-2 py-1">Flag</th>
                 <th className="border px-2 py-1">Theme</th>
                 <th className="border px-2 py-1">Notes</th>
@@ -273,6 +273,7 @@ export default function Home() {
                     <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">{i + 1}</a>
                   </td>
                   <td className="border px-2 py-1">{f.term}</td>
+                  <td className="border px-2 py-1">{f.matchType}</td>
                   <td className="border px-2 py-1">{f.flagColor}</td>
                   <td className="border px-2 py-1">{f.theme}</td>
                   <td className="border px-2 py-1">{f.notes}</td>
