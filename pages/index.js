@@ -178,31 +178,51 @@ export default function Home() {
   };
 
   const getHighlightedText = () => {
-    if (!flags.length) return text;
+  if (!flags.length) return text;
 
-    let result = '';
-    let lastIndex = 0;
+  let segments = [];
+  let lastIndex = 0;
 
-    flags.forEach((flag, i) => {
-      result += text.slice(lastIndex, flag.start);
-
-      const matchedText = text.slice(flag.start, flag.end);
-      let highlightColor = '#f97316';
-      if (flag.flagColor === 'Yellow') highlightColor = '#facc15';
-      if (flag.flagColor === 'Red') highlightColor = '#f97316';
-      if (flag.flagColor === 'Blue') highlightColor = '#60a5fa';
-
-      result += `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`;
-      lastIndex = flag.end;
+  flags.forEach((flag, i) => {
+    // Push plain text segment
+    segments.push({
+      text: text.slice(lastIndex, flag.start),
+      isMatch: false
     });
 
-    result += text.slice(lastIndex);
+    // Prepare highlight markup
+    const matchedText = text.slice(flag.start, flag.end);
+    let highlightColor = '#f97316';
+    if (flag.flagColor === 'Yellow') highlightColor = '#facc15';
+    if (flag.flagColor === 'Red') highlightColor = '#f97316';
+    if (flag.flagColor === 'Blue') highlightColor = '#60a5fa';
 
-    const paragraphs = result.split(/\n\s*\n/);
-    return paragraphs
-      .map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`)
-      .join('');
-  };
+    const matchMarkup = `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`;
+
+    segments.push({
+      text: matchMarkup,
+      isMatch: true
+    });
+
+    lastIndex = flag.end;
+  });
+
+  // Final plain segment
+  if (lastIndex < text.length) {
+    segments.push({
+      text: text.slice(lastIndex),
+      isMatch: false
+    });
+  }
+
+  // Join segments and wrap paragraphs
+  const fullText = segments.map(s => s.text).join('');
+  const paragraphs = fullText.split(/\n\s*\n/);
+
+  return paragraphs
+    .map(p => `<p style="margin-bottom: 1em; line-height: 1.7;">${p.trim()}</p>`)
+    .join('');
+};
 
   return (
   <div className="p-6 max-w-3xl mx-auto space-y-6">
