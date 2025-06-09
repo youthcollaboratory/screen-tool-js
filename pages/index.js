@@ -121,24 +121,36 @@ export default function Home() {
 
   const runScreening = (inputText, termList) => {
     const allMatches = [];
-
-    const extractContainingWord = (text, index) => {
-      const wordMatch = text.slice(index).match(/^\w+/);
-      const word = wordMatch?.[0] || '';
-      return { word, start: index, end: index + word.length };
-    };
-
+  
     termList.forEach(row => {
       const term = row['Term']?.trim();
       if (!term) return;
-
+  
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(escaped, 'gi');
-
+  
       let match;
       while ((match = regex.exec(inputText)) !== null) {
-        const { word, start, end } = extractContainingWord(inputText, match.index);
+        let word, start, end;
+  
+        if (term.includes(' ')) {
+          // Handle multi-word phrases directly
+          word = match[0];
+          start = match.index;
+          end = start + word.length;
+        } else {
+          // Use word boundaries for single terms
+          const leftMatch = inputText.slice(0, match.index).match(/\b\w+$/);
+          const rightMatch = inputText.slice(match.index).match(/^\w+/);
+          const left = leftMatch?.[0] || '';
+          const right = rightMatch?.[0] || '';
+          word = left + right;
+          start = match.index - left.length;
+          end = start + word.length;
+        }
+  
         const matchType = term.toLowerCase() === word.toLowerCase() ? 'Full' : 'Partial';
+  
         allMatches.push({
           displayTerm: word,
           term,
@@ -151,23 +163,24 @@ export default function Home() {
         });
       }
     });
-
+  
     allMatches.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start));
-
+  
     const nonOverlapping = [];
     let lastEnd = -1;
-
+  
     for (const match of allMatches) {
       if (match.start >= lastEnd) {
         nonOverlapping.push(match);
         lastEnd = match.end;
       }
     }
-
+  
     setFlags(nonOverlapping);
     setScanning(false);
     setScanComplete(true);
   };
+
 
   const getHighlightedText = () => {
     if (!flags.length) return text;
