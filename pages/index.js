@@ -8,10 +8,10 @@ export default function Home() {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [scanning, setScanning] = useState(false);
-  const [scanComplete, setScanComplete] = useState(false);
   const [error, setError] = useState('');
   const [flags, setFlags] = useState([]);
   const [csvData, setCsvData] = useState([]);
+  const [scanComplete, setScanComplete] = useState(false);
 
   useEffect(() => {
     const fetchTermsFromSheet = async () => {
@@ -31,92 +31,188 @@ export default function Home() {
     fetchTermsFromSheet();
   }, []);
 
-  const runScreening = (inputText, termList) => {
-    const allMatches = [];
-
-    termList.forEach(row => {
-      const term = row['Term']?.trim();
-      if (!term) return;
-
-      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(escaped, 'gi');
-
-      let match;
-      while ((match = regex.exec(inputText)) !== null) {
-        const left = inputText.slice(0, match.index).match(/\b\w+$/)?.[0] || '';
-        const right = inputText.slice(match.index).match(/^\w+/)?.[0] || '';
-        const fullWord = left + right;
-        const matchType = (match[0].length === fullWord.length) ? 'Full' : 'Partial';
-
-        allMatches.push({
-          term: term,
-          start: match.index,
-          end: match.index + match[0].length,
-          flagColor: row['Flag'] || '—',
-          theme: row['Theme'] || '—',
-          notes: row['Notes'] || '—',
-          matchType
-        });
+  useEffect(() => {
+    const handleHashJump = () => {
+      const id = window.location.hash?.substring(1);
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) {
+        const mark = el.querySelector('mark');
+        if (mark) {
+          mark.classList.remove('animate-pulse-match');
+          void mark.offsetWidth;
+          mark.classList.add('animate-pulse-match');
+        }
       }
-    });
+    };
 
-    allMatches.sort((a, b) => {
-      if (a.start !== b.start) return a.start - b.start;
-      return b.end - b.start - (a.end - a.start);
-    });
+    window.addEventListener('hashchange', handleHashJump);
+    return () => window.removeEventListener('hashchange', handleHashJump);
+  }, []);
 
-    const nonOverlapping = [];
-    let lastEnd = -1;
-    for (const match of allMatches) {
-      if (match.start >= lastEnd) {
-        nonOverlapping.push(match);
-        lastEnd = match.end;
+  const handleScrape = async () => {
+    setText('');
+    setLoading(true);
+    setScanning(true);
+    setError('');
+    setFlags([]);
+    setScanComplete(false);
+    try {
+      const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      if (res.ok) {
+        setText(data.text);
+        runScreening(data.text, csvData);
+      } else {
+        setError(data.error || 'Unknown error');
+        setScanning(false);
       }
+    } catch (e) {
+      setError(e.message);
+      setScanning(false);
     }
-
-    const sorted = nonOverlapping.map(({ end, ...rest }) => rest);
-    setFlags(sorted);
-    setScanning(false);
-    setScanComplete(true);
+    setLoading(false);
   };
+
+  const handlePDFUpload = async (file) => {
+    setUrl('');
+    setText('');
+    setFlags([]);
+    setError('');
+    setScanning(true);
+
+    try {
+      if (!file || !(file instanceof Blob)) {
+        throw new Error('No valid PDF file selected.');
+      }
+
+      const pdfjsLib = await import('pdfjs-dist/build/pdf');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const typedArray = new Uint8Array(reader.result);
+          const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+
+          let fullText = '';
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            const pageText = content.items.map((item) => item.str).join(' ');
+            fullText += pageText + '\n\n';
+          }
+
+          setText(fullText);
+          runScreening(fullText, csvData);
+        } catch (innerErr) {
+          setError('Error parsing PDF: ' + innerErr.message);
+        } finally {
+          setScanning(false);
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    } catch (err) {
+      setError('Failed to read PDF: ' + err.message);
+      setScanning(false);
+    }
+  };
+
+  const runScreening = (inputText, termList) => {
+  const allMatches = [];
+
+  // Helper: Expand matched fragment to whole containing word
+  const extractContainingWord = (text, matchIndex) => {
+    const leftMatch = text.slice(0, matchIndex).match(/\b\w+$/);
+    const rightMatch = text.slice(matchIndex).match(/^\w+/);
+    const left = leftMatch?.[0] || '';
+    const right = rightMatch?.[0] || '';
+    const word = left + right;
+    const start = matchIndex - left.length;
+    return { word, start };
+  };
+
+  termList.forEach(row => {
+    const term = row['Term']?.trim();
+    if (!term) return;
+
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+
+    let match;
+    while ((match = regex.exec(inputText)) !== null) {
+      const { word, start } = extractContainingWord(inputText, match.index);
+      allMatches.push({
+        term: word,
+        flagColor: row['Flag'] || '—',
+        theme: row['Theme'] || '—',
+        notes: row['Notes'] || '—',
+        start: start,
+        end: start + word.length
+      });
+    }
+  });
+
+  allMatches.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    return b.end - b.start - (a.end - a.start);
+  });
+
+  const nonOverlapping = [];
+  let lastEnd = -1;
+
+  for (const match of allMatches) {
+    if (match.start >= lastEnd) {
+      nonOverlapping.push(match);
+      lastEnd = match.end;
+    }
+  }
+
+  const sorted = nonOverlapping.map(({ end, ...rest }) => rest);
+
+  setFlags(sorted);
+  setScanning(false);
+  setScanComplete(true); // Don't forget this line from the previous fix
+};
+
 
   const getHighlightedText = () => {
     if (!flags.length) return text;
-    let segments = [];
+
     let lastIndex = 0;
+    let segments = [];
 
     flags.forEach((flag, i) => {
-      const left = text.slice(0, flag.start).match(/\b\w+$/)?.[0] || '';
-      const right = text.slice(flag.start).match(/^\w+/)?.[0] || '';
-      const fullWord = left + right;
-      const wordStart = flag.start - left.length;
-      const wordEnd = wordStart + fullWord.length;
-
-      if (wordStart > lastIndex) {
-        segments.push({ text: text.slice(lastIndex, wordStart), highlighted: false });
-      }
-
-      const beforeMatch = text.slice(wordStart, flag.start);
-      const match = text.slice(flag.start, flag.start + flag.term.length);
-      const afterMatch = text.slice(flag.start + flag.term.length, wordEnd);
+      segments.push({
+        start: lastIndex,
+        end: flag.start,
+        text: text.slice(lastIndex, flag.start),
+        highlighted: false,
+      });
 
       let highlightColor = '#f97316';
       if (flag.flagColor === 'Yellow') highlightColor = '#facc15';
       if (flag.flagColor === 'Red') highlightColor = '#f97316';
       if (flag.flagColor === 'Blue') highlightColor = '#60a5fa';
 
-      const annotated = `
-        ${beforeMatch}<mark class="animate-pulse-match" style="background-color: ${highlightColor};">${match}</mark>${afterMatch}
-        <a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>
-      `;
+      const matchedText = text.substr(flag.start, flag.term.length);
 
-      segments.push({ text: annotated, highlighted: true });
-      lastIndex = wordEnd;
+      segments.push({
+        start: flag.start,
+        end: flag.start + flag.term.length,
+        text: `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`
+      });
+
+      lastIndex = flag.start + flag.term.length;
     });
 
-    if (lastIndex < text.length) {
-      segments.push({ text: text.slice(lastIndex), highlighted: false });
-    }
+    segments.push({
+      start: lastIndex,
+      end: text.length,
+      text: text.slice(lastIndex),
+      highlighted: false,
+    });
 
     const fullText = segments.map(seg => seg.text).join('');
     const paragraphs = fullText.split(/\n\s*\n/);
@@ -133,29 +229,7 @@ export default function Home() {
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">Scan From Webpage</h2>
         <input type="text" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Enter a URL to scrape and scan..." className="border border-gray-300 p-2 rounded w-full mb-3" />
-        <button onClick={async () => {
-          setText('');
-          setLoading(true);
-          setScanning(true);
-          setScanComplete(false);
-          setError('');
-          setFlags([]);
-          try {
-            const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
-            const data = await res.json();
-            if (res.ok) {
-              setText(data.text);
-              runScreening(data.text, csvData);
-            } else {
-              setError(data.error || 'Unknown error');
-              setScanning(false);
-            }
-          } catch (e) {
-            setError(e.message);
-            setScanning(false);
-          }
-          setLoading(false);
-        }} disabled={loading} className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark">
+        <button onClick={handleScrape} disabled={loading} className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark">
           {loading ? 'Scraping...' : 'Scrape and Scan'}
         </button>
       </div>
@@ -163,13 +237,16 @@ export default function Home() {
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
         <h2 className="text-xl font-semibold mb-2">Scan Pasted Text</h2>
         <textarea value={text} onChange={(e) => setText(e.target.value)} placeholder="Paste your text here..." className="border border-gray-300 p-2 rounded w-full h-40 mb-3" />
-        <button onClick={() => {
-          setUrl('');
-          setScanning(true);
-          setScanComplete(false);
-          runScreening(text, csvData);
-        }} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
+        <button onClick={() => { setUrl(''); setScanning(true); setScanComplete(false); runScreening(text, csvData); }} disabled={loading || !text} className="bg-yc-green text-white px-4 py-2 rounded hover:bg-yc-green-dark">
           Scan Pasted Text
+        </button>
+      </div>
+
+      <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
+        <h2 className="text-xl font-semibold mb-2">Scan a PDF</h2>
+        <input type="file" accept="application/pdf" id="pdf-upload" className="hidden" onChange={(e) => handlePDFUpload(e.target.files[0])} />
+        <button onClick={() => document.getElementById('pdf-upload').click()} className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark">
+          Upload PDF
         </button>
       </div>
 
@@ -184,7 +261,6 @@ export default function Home() {
               <tr>
                 <th className="border px-2 py-1">#</th>
                 <th className="border px-2 py-1">Term</th>
-                <th className="border px-2 py-1">Match Type</th>
                 <th className="border px-2 py-1">Flag</th>
                 <th className="border px-2 py-1">Theme</th>
                 <th className="border px-2 py-1">Notes</th>
@@ -197,7 +273,6 @@ export default function Home() {
                     <a href={`#ref-${i + 1}`} className="text-blue-600 hover:underline">{i + 1}</a>
                   </td>
                   <td className="border px-2 py-1">{f.term}</td>
-                  <td className="border px-2 py-1">{f.matchType}</td>
                   <td className="border px-2 py-1">{f.flagColor}</td>
                   <td className="border px-2 py-1">{f.theme}</td>
                   <td className="border px-2 py-1">{f.notes}</td>
@@ -208,7 +283,7 @@ export default function Home() {
         </div>
       )}
 
-      {!scanning && scanComplete && text && flags.length === 0 && (
+      {!scanning && scanComplete && flags.length === 0 && (
         <div className="mt-6 bg-gray-50 p-4 border rounded">
           <h2 className="font-semibold mb-2">No flagged terms found.</h2>
         </div>
