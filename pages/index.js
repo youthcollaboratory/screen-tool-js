@@ -120,49 +120,57 @@ export default function Home() {
   };
 
   const runScreening = (inputText, termList) => {
-    const allMatches = [];
+  const allMatches = [];
 
-    termList.forEach(row => {
-      const term = row['Term']?.trim();
-      if (!term) return;
-
-      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(escaped, 'gi');
-
-      let match;
-      while ((match = regex.exec(inputText)) !== null) {
-        allMatches.push({
-          term: match[0],
-          flagColor: row['Flag'] || '—',
-          theme: row['Theme'] || '—',
-          notes: row['Notes'] || '—',
-          start: match.index,
-          end: match.index + match[0].length
-        });
-      }
-    });
-
-    allMatches.sort((a, b) => {
-      if (a.start !== b.start) return a.start - b.start;
-      return b.end - b.start - (a.end - a.start);
-    });
-
-    const nonOverlapping = [];
-    let lastEnd = -1;
-
-    for (const match of allMatches) {
-      if (match.start >= lastEnd) {
-        nonOverlapping.push(match);
-        lastEnd = match.end;
-      }
-    }
-
-    const sorted = nonOverlapping.map(({ end, ...rest }) => rest);
-
-    setFlags(sorted);
-    setScanning(false);
-    setScanComplete(true);
+  // Helper: Expand matched fragment to whole containing word
+  const extractContainingWord = (text, matchIndex) => {
+    const left = text.slice(0, matchIndex).match(/\b\w+$/)?.[0] || '';
+    const right = text.slice(matchIndex).match(/^\w+/)?.[0] || '';
+    return left + right;
   };
+
+  termList.forEach(row => {
+    const term = row['Term']?.trim();
+    if (!term) return;
+
+    const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escaped, 'gi');
+
+    let match;
+    while ((match = regex.exec(inputText)) !== null) {
+      allMatches.push({
+        term: extractContainingWord(inputText, match.index),
+        flagColor: row['Flag'] || '—',
+        theme: row['Theme'] || '—',
+        notes: row['Notes'] || '—',
+        start: match.index,
+        end: match.index + match[0].length
+      });
+    }
+  });
+
+  allMatches.sort((a, b) => {
+    if (a.start !== b.start) return a.start - b.start;
+    return b.end - b.start - (a.end - a.start);
+  });
+
+  const nonOverlapping = [];
+  let lastEnd = -1;
+
+  for (const match of allMatches) {
+    if (match.start >= lastEnd) {
+      nonOverlapping.push(match);
+      lastEnd = match.end;
+    }
+  }
+
+  const sorted = nonOverlapping.map(({ end, ...rest }) => rest);
+
+  setFlags(sorted);
+  setScanning(false);
+  setScanComplete(true); // Don't forget this line from the previous fix
+};
+
 
   const getHighlightedText = () => {
     if (!flags.length) return text;
