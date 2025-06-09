@@ -144,6 +144,7 @@ export default function Home() {
         const { word, start } = extractContainingWord(inputText, match.index);
         const matchType = (term.toLowerCase() === word.toLowerCase()) ? 'Full' : 'Partial';
         allMatches.push({
+          displayTerm: word,
           term,
           matchType,
           flagColor: row['Flag'] || '—',
@@ -203,8 +204,5 @@ export default function Home() {
       .join('');
   };
 
-  return (
-    // (no changes to the return JSX markup needed)
-    // ... JSX stays the same
-  );
+  return null;
 }
