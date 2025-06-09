@@ -177,51 +177,37 @@ export default function Home() {
     setScanComplete(true);
   };
 
-  const getHighlightedText = () => {
+ const getHighlightedText = () => {
   if (!flags.length) return text;
 
-  let segments = [];
-  let lastIndex = 0;
+  let output = '';
+  let currentIndex = 0;
 
   flags.forEach((flag, i) => {
-    // Push plain text segment
-    segments.push({
-      text: text.slice(lastIndex, flag.start),
-      isMatch: false
-    });
+    const { start, end, flagColor } = flag;
 
-    // Prepare highlight markup
-    const matchedText = text.slice(flag.start, flag.end);
-    let highlightColor = '#f97316';
-    if (flag.flagColor === 'Yellow') highlightColor = '#facc15';
-    if (flag.flagColor === 'Red') highlightColor = '#f97316';
-    if (flag.flagColor === 'Blue') highlightColor = '#60a5fa';
+    // Append the text before this match
+    output += text.slice(currentIndex, start);
 
-    const matchMarkup = `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`;
+    // Choose color
+    let color = '#f97316';
+    if (flagColor === 'Yellow') color = '#facc15';
+    if (flagColor === 'Red') color = '#f97316';
+    if (flagColor === 'Blue') color = '#60a5fa';
 
-    segments.push({
-      text: matchMarkup,
-      isMatch: true
-    });
+    // Append highlighted word and superscript
+    const word = text.slice(start, end);
+    output += `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${color};">${word}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`;
 
-    lastIndex = flag.end;
+    currentIndex = end;
   });
 
-  // Final plain segment
-  if (lastIndex < text.length) {
-    segments.push({
-      text: text.slice(lastIndex),
-      isMatch: false
-    });
-  }
+  // Append the remaining text
+  output += text.slice(currentIndex);
 
-  // Join segments and wrap paragraphs
-  const fullText = segments.map(s => s.text).join('');
-  const paragraphs = fullText.split(/\n\s*\n/);
-
-  return paragraphs
-    .map(p => `<p style="margin-bottom: 1em; line-height: 1.7;">${p.trim()}</p>`)
-    .join('');
+  // Paragraph wrapping
+  const paragraphs = output.split(/\n\s*\n/);
+  return paragraphs.map(p => `<p style="margin-bottom: 1em; line-height: 1.7;">${p.trim()}</p>`).join('');
 };
 
   return (
