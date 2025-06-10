@@ -121,66 +121,62 @@ export default function Home() {
 
   const runScreening = (inputText, termList) => {
     const allMatches = [];
-  
+
     termList.forEach(row => {
       const term = row['Term']?.trim();
       if (!term) return;
-  
+
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       const regex = new RegExp(escaped, 'gi');
-  
+
       let match;
       while ((match = regex.exec(inputText)) !== null) {
-        let word, start, end;
-  
+        let foundInWord, matchStart, matchEnd;
+
         if (term.includes(' ')) {
-          // Handle multi-word phrases directly
-          word = match[0];
-          start = match.index;
-          end = start + word.length;
+          // Multi-word phrase — highlight the whole match
+          foundInWord = match[0];
+          matchStart = match.index;
+          matchEnd = matchStart + foundInWord.length;
         } else {
-          // Use word boundaries for single terms
-          const leftMatch = inputText.slice(0, match.index).match(/\b\w+$/);
-          const rightMatch = inputText.slice(match.index).match(/^\w+/);
-          const left = leftMatch?.[0] || '';
-          const right = rightMatch?.[0] || '';
-          word = left + right;
-          start = match.index - left.length;
-          end = start + word.length;
+          // Single word match — highlight just the base term inside the larger word
+          const left = inputText.slice(0, match.index).match(/\b\w+$/)?.[0] || '';
+          const right = inputText.slice(match.index).match(/^\w+/)?.[0] || '';
+          foundInWord = left + right;
+
+          matchStart = match.index;
+          matchEnd = matchStart + term.length;
         }
-  
-        const matchType = term.toLowerCase() === word.toLowerCase() ? 'Full' : 'Partial';
-  
+
         allMatches.push({
-          displayTerm: word,
-          term,
-          matchType,
+          displayTerm: term,               // just the base term gets highlighted
+          term,                            // original base term from dictionary
+          foundIn: foundInWord,           // full word containing it
           flagColor: row['Flag'] || '—',
           theme: row['Theme'] || '—',
           notes: row['Notes'] || '—',
-          start,
-          end
+          start: matchStart,
+          end: matchEnd
         });
       }
     });
-  
+
     allMatches.sort((a, b) => a.start - b.start || b.end - b.start - (a.end - a.start));
-  
+
     const nonOverlapping = [];
     let lastEnd = -1;
-  
+
     for (const match of allMatches) {
       if (match.start >= lastEnd) {
         nonOverlapping.push(match);
         lastEnd = match.end;
       }
     }
-  
+
     setFlags(nonOverlapping);
     setScanning(false);
     setScanComplete(true);
   };
-
 
   const getHighlightedText = () => {
     if (!flags.length) return text;
@@ -189,16 +185,34 @@ export default function Home() {
     let lastIndex = 0;
 
     flags.forEach((flag, i) => {
-      result += text.slice(lastIndex, flag.start);
+      const { start, end, displayTerm, flagColor } = flag;
 
-      const matchedText = text.slice(flag.start, flag.end);
-      let highlightColor = '#f97316';
-      if (flag.flagColor === 'Yellow') highlightColor = '#facc15';
-      if (flag.flagColor === 'Red') highlightColor = '#f97316';
-      if (flag.flagColor === 'Blue') highlightColor = '#60a5fa';
+      // Add any unmarked text before this word
+      result += text.slice(lastIndex, start);
 
-      result += `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block"><mark class="animate-pulse-match" style="background-color: ${highlightColor};">${matchedText}</mark></a><a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`;
-      lastIndex = flag.end;
+      const fullWord = text.slice(start, end);
+      const matchIndex = fullWord.toLowerCase().indexOf(displayTerm.toLowerCase());
+
+      if (matchIndex === -1) {
+        // fallback if not found
+        result += fullWord;
+      } else {
+        const before = fullWord.slice(0, matchIndex);
+        const after = fullWord.slice(matchIndex + displayTerm.length);
+
+        const highlightColor =
+          flagColor === 'Yellow' ? '#facc15' :
+          flagColor === 'Red' ? '#f97316' :
+          flagColor === 'Blue' ? '#60a5fa' :
+          '#f97316';
+
+        result += `<a id="ref-${i + 1}" class="scroll-mt-24 inline-block">`;
+        result += `${before}<mark class="animate-pulse-match" style="background-color: ${highlightColor};">${displayTerm}</mark>${after}`;
+        result += `</a>`;
+        result += `<a href="#flag-${i + 1}"><sup style="font-size: 0.7em; vertical-align: super; margin-left: 2px;">[${i + 1}]</sup></a>`;
+      }
+
+      lastIndex = end;
     });
 
     result += text.slice(lastIndex);
@@ -281,7 +295,7 @@ export default function Home() {
               <tr>
                 <th className="border px-2 py-1">#</th>
                 <th className="border px-2 py-1">Term</th>
-                <th className="border px-2 py-1">Match Type</th>
+                <th className="border px-2 py-1">Found In</th>
                 <th className="border px-2 py-1">Flag</th>
                 <th className="border px-2 py-1">Theme</th>
                 <th className="border px-2 py-1">Notes</th>
@@ -296,8 +310,13 @@ export default function Home() {
                     </a>
                   </td>
                   <td className="border px-2 py-1">{f.term}</td>
-                  <td className="border px-2 py-1">{f.matchType}</td>
-                  <td className="border px-2 py-1">{f.flagColor}</td>
+                  <td className="border px-2 py-1">{f.foundIn}</td>
+                  <td className="border px-2 py-1 text-center">
+                  {f.flagColor === 'Red' && 'Red'}
+                  {f.flagColor === 'Yellow' && 'Yellow'}
+                  {f.flagColor === 'Blue' && 'Blue'}
+                  {!['Red', 'Yellow', 'Blue'].includes(f.flagColor) && f.flagColor}
+                  </td>
                   <td className="border px-2 py-1">{f.theme}</td>
                   <td className="border px-2 py-1">{f.notes}</td>
                 </tr>
