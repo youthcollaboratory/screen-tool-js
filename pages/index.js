@@ -145,20 +145,29 @@ export default function Home() {
       const term = row['Term']?.trim();
       if (!term) return;
 
+      const matchMode = (row['MatchMode'] || 'loose').toLowerCase();
       const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(escaped, 'gi');
+
+      let regex;
+      if (matchMode === 'strict') {
+        regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+      } else if (matchMode === 'mixed') {
+        // Match at start of a word or hyphenated compound (e.g. 'cisgender', 'cis-gender')
+        regex = new RegExp(`\\b${escaped}[-\\w]*`, 'gi');
+      } else {
+        // Default to loose: match term anywhere
+        regex = new RegExp(escaped, 'gi');
+      }
 
       let match;
       while ((match = regex.exec(inputText)) !== null) {
         let foundInWord, matchStart, matchEnd;
 
         if (term.includes(' ')) {
-          // Multi-word phrase — highlight the whole match
           foundInWord = match[0];
           matchStart = match.index;
           matchEnd = matchStart + foundInWord.length;
         } else {
-          // Single word match — highlight just the base term inside the larger word
           const left = inputText.slice(0, match.index).match(/\b\w+$/)?.[0] || '';
           const right = inputText.slice(match.index).match(/^\w+/)?.[0] || '';
           foundInWord = left + right;
@@ -168,9 +177,9 @@ export default function Home() {
         }
 
         allMatches.push({
-          displayTerm: term,               // just the base term gets highlighted
-          term,                            // original base term from dictionary
-          foundIn: foundInWord,           // full word containing it
+          displayTerm: term,
+          term,
+          foundIn: foundInWord,
           flagColor: row['Flag'] || '—',
           theme: row['Theme'] || '—',
           notes: row['Notes'] || '—',
@@ -243,33 +252,33 @@ export default function Home() {
       .join('');
   };
 
-const exportFlagsToCSV = () => {
-  if (!flags.length) return;
+  const exportFlagsToCSV = () => {
+    if (!flags.length) return;
 
-  const headers = ['Term', 'Found In', 'Flag', 'Theme', 'Notes'];
-  const rows = flags.map(flag => [
-    `"${flag.term}"`,
-    `"${flag.foundIn}"`,
-    `"${flag.flagColor}"`,
-    `"${flag.theme}"`,
-    `"${flag.notes.replace(/"/g, '""')}"`
-  ]);
+    const headers = ['Term', 'Found In', 'Flag', 'Theme', 'Notes'];
+    const rows = flags.map(flag => [
+      `"${flag.term}"`,
+      `"${flag.foundIn}"`,
+      `"${flag.flagColor}"`,
+      `"${flag.theme}"`,
+      `"${flag.notes.replace(/"/g, '""')}"`
+    ]);
 
-  const csvContent = [
-    headers.join(','),
-    ...rows.map(r => r.join(','))
-  ].join('\n');
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
 
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', 'flagged_terms.csv');
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'flagged_terms.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <>
@@ -355,7 +364,7 @@ const exportFlagsToCSV = () => {
                 onClick={exportFlagsToCSV}
                 className="text-blue-600 hover:underline text-sm"
               >
-                Download
+                Download as CSV
               </button>
             )}
           </h2>
