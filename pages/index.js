@@ -272,6 +272,15 @@ const exportFlagsToCSV = () => {
 };
 
   return (
+    <>
+    <header className="w-full bg-gray-100 border-b border-gray-200 py-3 mb-6">
+      <nav className="max-w-3xl mx-auto flex justify-end space-x-6 px-6 text-sm text-gray-700">
+        <a href="#" className="hover:underline">Instructions</a>
+        <a href="#" className="hover:underline">Dictionary</a>
+        <a href="#" className="hover:underline">Suggestions</a>
+      </nav>
+    </header>
+    
     <div className="p-6 max-w-3xl mx-auto space-y-6">
       <h1 className="text-3xl font-bold mb-2">Communication Screen Tool</h1>
 
@@ -401,5 +410,6 @@ const exportFlagsToCSV = () => {
         </div>
       )}
     </div>
+    </>
   );
 }
