@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set up PDF.js worker to load from CDN based on the current library version
+pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
 const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv96fMnm7vecd2DfpPZ0h4jwK94rG-QNIjyH5fbqx7p5hddM9iJEgpK1gnAYOUZ55VrlqWxE9O7EKg/pub?gid=143046203&single=true&output=csv';
 
@@ -81,19 +85,23 @@ export default function Home() {
     setError('');
     setScanning(true);
 
+    console.log('📥 PDF file received:', file?.name || 'Unnamed file');
+
     try {
       if (!file || !(file instanceof Blob)) {
         throw new Error('No valid PDF file selected.');
       }
 
-      const pdfjsLib = await import('pdfjs-dist/build/pdf');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
+      console.log('✅ Valid PDF file confirmed');
 
       const reader = new FileReader();
+
       reader.onload = async () => {
         try {
           const typedArray = new Uint8Array(reader.result);
+
           const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+          console.log('📄 Total PDF pages:', pdf.numPages);
 
           let fullText = '';
           for (let i = 1; i <= pdf.numPages; i++) {
@@ -103,9 +111,18 @@ export default function Home() {
             fullText += pageText + '\n\n';
           }
 
+          console.log('📄 Extracted PDF text (first 300 chars):', fullText.slice(0, 300));
           setText(fullText);
-          runScreening(fullText, csvData);
+
+          console.log('📚 Dictionary loaded:', csvData?.length || 0, 'terms');
+          console.log('🕵️ Running screening...');
+
+          const matches = runScreening(fullText, csvData);
+          console.log('✅ Matches found:', matches.length);
+          setFlags(matches);
+
         } catch (innerErr) {
+          console.error('❌ PDF parsing error:', innerErr.message || innerErr);
           setError('Error parsing PDF: ' + innerErr.message);
         } finally {
           setScanning(false);
@@ -113,8 +130,10 @@ export default function Home() {
       };
 
       reader.readAsArrayBuffer(file);
-    } catch (err) {
-      setError('Failed to read PDF: ' + err.message);
+
+    } catch (outerErr) {
+      console.error('❌ File load error:', outerErr.message || outerErr);
+      setError('Failed to read PDF: ' + outerErr.message);
       setScanning(false);
     }
   };
@@ -176,6 +195,7 @@ export default function Home() {
     setFlags(nonOverlapping);
     setScanning(false);
     setScanComplete(true);
+    return nonOverlapping;
   };
 
   const getHighlightedText = () => {
@@ -222,6 +242,34 @@ export default function Home() {
       .map(para => `<p style="margin-bottom: 1em; line-height: 1.7;">${para.trim()}</p>`)
       .join('');
   };
+
+const exportFlagsToCSV = () => {
+  if (!flags.length) return;
+
+  const headers = ['Term', 'Found In', 'Flag', 'Theme', 'Notes'];
+  const rows = flags.map(flag => [
+    `"${flag.term}"`,
+    `"${flag.foundIn}"`,
+    `"${flag.flagColor}"`,
+    `"${flag.theme}"`,
+    `"${flag.notes.replace(/"/g, '""')}"`
+  ]);
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(r => r.join(','))
+  ].join('\n');
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'flagged_terms.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
   return (
     <div className="p-6 max-w-3xl mx-auto space-y-6">
@@ -289,7 +337,17 @@ export default function Home() {
 
       {!scanning && flags.length > 0 && (
         <div className="my-6">
-          <h2 className="font-semibold mb-2">Flagged Terms</h2>
+          <h2 className="font-semibold mb-2 flex items-center gap-2">
+            Flagged Terms
+            {flags.length > 0 && (
+              <button
+                onClick={exportFlagsToCSV}
+                className="text-blue-600 hover:underline text-sm"
+              >
+                Download
+              </button>
+            )}
+          </h2>
           <table className="table-auto border-collapse w-full text-sm bg-white shadow-sm rounded">
             <thead>
               <tr>
