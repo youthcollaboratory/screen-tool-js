@@ -5,7 +5,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 // Set up PDF.js worker to load from CDN based on the current library version
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
 
-const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv96fMnm7vecd2DfpPZ0h4jwK94rG-QNIjyH5fbqx7p5hddM9iJEgpK1gnAYOUZ55VrlqWxE9O7EKg/pub?gid=143046203&single=true&output=csv';
+const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRC5PpzHyHlVBAObHQyamR4Kizg8gl6SRCBjtLA7zWSTPwXRs1XauOJk_oxPaR6a2lJ1opGhK9nXf8I/pub?gid=0&single=true&output=csv';
 
 export default function Home() {
   const [url, setUrl] = useState('');
@@ -288,7 +288,7 @@ export default function Home() {
             <nav className="flex space-x-6 text-sm text-gray-700">
               <a href="#" className="hover:underline">Instructions</a>
               <a href="#" className="hover:underline">Dictionary</a>
-              <a href="#" className="hover:underline">Suggestions</a>
+              <a href="https://forms.gle/bBPTaj5py6iQLerTA" target="_blank" className="hover:underline">Suggestions</a>
             </nav>
           </div>
         </header>
