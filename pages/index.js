@@ -138,32 +138,40 @@ export default function Home() {
     }
   };
 
-  const runScreening = (inputText, termList) => {
+    const runScreening = (inputText, termList) => {
     const allMatches = [];
 
     termList.forEach(row => {
       const term = row['Term']?.trim();
       if (!term) return;
 
-      const matchMode = (row['MatchMode'] || 'loose').toLowerCase();
-      const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
+      const isPhrase = term.includes(' ');
       let regex;
-      if (matchMode === 'strict') {
-        regex = new RegExp(`\\b${escaped}\\b`, 'gi');
-      } else if (matchMode === 'mixed') {
-        // Match at start of a word or hyphenated compound (e.g. 'cisgender', 'cis-gender')
-        regex = new RegExp(`\\b${escaped}[-\\w]*`, 'gi');
+
+      if (isPhrase) {
+        // Allow for irregular spacing in multi-word phrases
+        const pattern = term.trim().split(/\s+/).map(w =>
+          w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        ).join('\\s+');
+        regex = new RegExp(pattern, 'gi');
       } else {
-        // Default to loose: match term anywhere
-        regex = new RegExp(escaped, 'gi');
+        const matchMode = (row['MatchMode'] || 'loose').toLowerCase();
+        const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        if (matchMode === 'strict') {
+          regex = new RegExp(`\\b${escaped}\\b`, 'gi');
+        } else if (matchMode === 'mixed') {
+          regex = new RegExp(`\\b${escaped}[-\\w]*`, 'gi');
+        } else {
+          regex = new RegExp(escaped, 'gi');
+        }
       }
 
       let match;
       while ((match = regex.exec(inputText)) !== null) {
         let foundInWord, matchStart, matchEnd;
 
-        if (term.includes(' ')) {
+        if (isPhrase) {
           foundInWord = match[0];
           matchStart = match.index;
           matchEnd = matchStart + foundInWord.length;
@@ -286,8 +294,8 @@ export default function Home() {
           <div className="max-w-3xl mx-auto flex flex-col md:flex-row justify-between items-center px-6 space-y-2 md:space-y-0">
             <h1 className="text-2xl font-bold text-gray-800">Communication Screen Tool</h1>
             <nav className="flex space-x-6 text-sm text-gray-700">
-              <a href="#" className="hover:underline">Instructions</a>
-              <a href="#" className="hover:underline">Dictionary</a>
+              <a href="https://docs.google.com/document/d/1r7X60wa1zd-nRTSRtoEermYby_NUn3yOaIw3beeRbGU/edit?usp=sharing" target="_blank"className="hover:underline">Instructions</a>
+              <a href="https://docs.google.com/spreadsheets/d/1CCUXNvrnlzQ6pYmEfZxRGJF-t9O7RnC_oZD2dxb_dMk/edit?usp=sharing" target="_blank" className="hover:underline">Dictionary</a>
               <a href="https://forms.gle/bBPTaj5py6iQLerTA" target="_blank" className="hover:underline">Suggestions</a>
             </nav>
           </div>
