@@ -54,6 +54,30 @@ export default function Home() {
     return () => window.removeEventListener('hashchange', handleHashJump);
   }, []);
 
+  const normalizeTextForScreening = (rawText) => {
+    const cleaned = rawText
+      // Replace control/invisible ASCII characters
+      .replace(/[\u0000-\u001F\u007F-\u009F]+/g, ' ')
+      // Replace non-breaking/invisible Unicode spaces
+      .replace(/[\u00A0\u2000-\u200B\u202F\u205F\u3000]/g, ' ')
+      // Remove hyphen + line breaks
+      .replace(/-\s*\n\s*/g, '')
+      // Convert all other line breaks to spaces
+      .replace(/\s*\n\s*/g, ' ')
+      // Collapse multiple spaces
+      .replace(/\s{2,}/g, ' ')
+      // Normalize punctuation
+      .replace(/[“”]/g, '"')
+      .replace(/[‘’]/g, "'")
+      .replace(/\uFFFD/g, '')
+      .trim();
+
+    // Escape HTML tags
+    return cleaned
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  };
+
   const handleScrape = async () => {
     setText('');
     setLoading(true);
@@ -111,13 +135,20 @@ export default function Home() {
             fullText += pageText + '\n\n';
           }
 
+          // Normalize the extracted text for reliable matching
+          const normalizedText = normalizeTextForScreening(fullText);
           console.log('📄 Extracted PDF text (first 300 chars):', fullText.slice(0, 300));
           setText(fullText);
+
+          console.log('📄 Cleaned text (first 300 chars):', normalizedText.slice(0, 300));
+          console.log('📄 Extracted PDF text (first 300 chars):', fullText.slice(0, 300));
+
+          setText(normalizedText); // This updates the displayed text in your UI
 
           console.log('📚 Dictionary loaded:', csvData?.length || 0, 'terms');
           console.log('🕵️ Running screening...');
 
-          const matches = runScreening(fullText, csvData);
+          const matches = runScreening(normalizedText, csvData);
           console.log('✅ Matches found:', matches.length);
           setFlags(matches);
 
