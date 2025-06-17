@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import * as pdfjsLib from 'pdfjs-dist';
+import { event as trackGAEvent } from '../lib/ga4';
 
 // Set up PDF.js worker to load from CDN based on the current library version
 pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.js';
@@ -294,6 +295,12 @@ export default function Home() {
   const exportFlagsToCSV = () => {
     if (!flags.length) return;
 
+    trackGAEvent({
+      action: 'download_csv',
+      category: 'Export',
+      label: 'Download CSV'
+    });
+
     const headers = ['Term', 'Found In', 'Flag', 'Theme', 'Notes'];
     const rows = flags.map(flag => [
       `"${flag.term}"`,
@@ -344,12 +351,19 @@ export default function Home() {
           className="border border-gray-300 p-2 rounded w-full mb-3"
         />
         <button
-          onClick={handleScrape}
-          disabled={loading}
-          className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark"
-        >
-          {loading ? 'Scraping...' : 'Scrape and Scan'}
-        </button>
+            onClick={() => {
+              trackGAEvent({
+                action: 'click_scan_web',
+                category: 'Button',
+                label: 'Scan Webpage'
+              });
+              handleScrape();
+            }}
+            disabled={loading}
+            className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark"
+          >
+            {loading ? 'Scraping...' : 'Scrape and Scan'}
+          </button>
       </div>
 
       <div className="border border-gray-200 rounded-lg p-4 shadow-sm bg-white">
@@ -362,6 +376,11 @@ export default function Home() {
         />
         <button
           onClick={() => {
+            trackGAEvent({
+              action: 'click_scan_text',
+              category: 'Button',
+              label: 'Scan Text'
+            });
             setUrl('');
             setScanning(true);
             setScanComplete(false);
@@ -384,7 +403,14 @@ export default function Home() {
           onChange={(e) => handlePDFUpload(e.target.files[0])}
         />
         <button
-          onClick={() => document.getElementById('pdf-upload').click()}
+          onClick={() => {
+            trackGAEvent({
+              action: 'click_scan_file',
+              category: 'Button',
+              label: 'Scan File'
+            });
+            document.getElementById('pdf-upload').click();
+          }}
           className="bg-yc-blue text-white px-4 py-2 rounded hover:bg-yc-blue-dark"
         >
           Upload PDF
